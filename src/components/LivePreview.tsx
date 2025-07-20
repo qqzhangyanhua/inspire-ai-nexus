@@ -1,5 +1,5 @@
 
-import { Refresh, ExternalLink, Monitor, Tablet, Smartphone } from "lucide-react";
+import { RefreshCw, ExternalLink, Monitor, Tablet, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -109,7 +109,7 @@ const LivePreview = ({ html, css, javascript }: LivePreviewProps) => {
 
           {/* Control Buttons */}
           <Button variant="ghost" size="sm" onClick={handleRefresh}>
-            <Refresh className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={handleOpenNewTab}>
             <ExternalLink className="w-4 h-4" />
