@@ -1,8 +1,16 @@
 
-import { Search, User } from "lucide-react";
+import { Search, User, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,6 +18,7 @@ interface HeaderProps {
 }
 
 const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
+  const { user, signOut, loading } = useAuth();
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -46,13 +55,42 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
             />
           </div>
           
-          <Button className="bg-primary hover:bg-primary/90">
-            Contribute
-          </Button>
+          {/* Contribute Button - only show when logged in */}
+          {user && (
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Contribute
+            </Button>
+          )}
           
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <User className="w-5 h-5" />
-          </Button>
+          {/* Auth Section */}
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse"></div>
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <User className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="font-medium">
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  登出
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" size="sm">
+                登录
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
