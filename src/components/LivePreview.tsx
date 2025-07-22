@@ -76,7 +76,7 @@ const LivePreview = ({ html, css, javascript }: LivePreviewProps) => {
     <Card className="overflow-hidden">
       {/* Header Bar */}
       <div className="flex items-center justify-between p-3 bg-muted/50 border-b border-border">
-        <h3 className="font-semibold text-foreground">Live Preview</h3>
+        <h3 className="font-semibold text-foreground">实时预览</h3>
         
         <div className="flex items-center space-x-2">
           {/* View Mode Toggles */}

@@ -30,8 +30,8 @@ const CaseMetadata = ({ caseData }: CaseMetadataProps) => {
   const copyPrompt = () => {
     navigator.clipboard.writeText(caseData.prompt);
     toast({
-      title: "Prompt copied!",
-      description: "The AI prompt has been copied to your clipboard",
+      title: "提示词已复制！",
+      description: "AI提示词已复制到剪贴板",
     });
   };
 
@@ -58,7 +58,7 @@ const CaseMetadata = ({ caseData }: CaseMetadataProps) => {
       {/* Contributor Info */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold text-foreground mb-3">
-          Contributor
+          贡献者
         </h3>
         
         <div className="flex items-center space-x-3">
@@ -78,11 +78,11 @@ const CaseMetadata = ({ caseData }: CaseMetadataProps) => {
       <Card className="p-6 bg-accent/50 border-accent">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-foreground">
-            AI Prompt
+            AI 提示词
           </h3>
           <Button onClick={copyPrompt} variant="outline" size="sm">
             <Copy className="w-4 h-4 mr-2" />
-            Copy Prompt
+            复制提示词
           </Button>
         </div>
         
@@ -97,7 +97,7 @@ const CaseMetadata = ({ caseData }: CaseMetadataProps) => {
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-between p-0 h-auto">
               <span className="text-sm font-medium text-foreground">
-                Structured Breakdown
+                结构化分解
               </span>
               {isBreakdownOpen ? (
                 <ChevronUp className="w-4 h-4" />

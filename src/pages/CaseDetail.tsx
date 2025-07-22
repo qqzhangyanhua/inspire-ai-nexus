@@ -13,34 +13,34 @@ const CaseDetail = () => {
   // Mock data - in a real app, this would come from an API
   const caseData = {
     id: id || "1",
-    title: "Glassmorphism Dashboard",
-    tags: ["Glassmorphism", "Dashboard", "Modern", "SaaS"],
+    title: "毛玻璃仪表板",
+    tags: ["毛玻璃风格", "仪表板", "现代", "SaaS"],
     contributor: {
-      name: "Alex Chen",
+      name: "陈小明",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
     },
-    prompt: "Create a sleek data analysis dashboard with glassmorphism design principles. Use frosted glass cards with subtle transparency, glowing elements, and a dark space theme. Include interactive charts, sidebar navigation, and vibrant gradient accents in deep blue and purple tones.",
+    prompt: "创建一个采用毛玻璃设计原则的精美数据分析仪表板。使用带有微妙透明度的磨砂玻璃卡片、发光元素和深色太空主题。包含交互式图表、侧边栏导航，以及深蓝和紫色调的鲜艳渐变装饰。",
     structuredBreakdown: [
-      { emoji: "🎨", title: "Style", value: "Glassmorphism, vibrant gradient" },
-      { emoji: "📦", title: "Subject", value: "Data analysis dashboard for a SaaS product" },
-      { emoji: "💡", title: "Elements", value: "Frosted glass cards, glowing charts, sidebar" },
-      { emoji: "🌈", title: "Colors", value: "Deep space blue, bright white highlights" },
-      { emoji: "📱", title: "Layout", value: "Responsive grid with card-based interface" },
-      { emoji: "✨", title: "Effects", value: "Blur effects, subtle shadows, gradient overlays" }
+      { emoji: "🎨", title: "风格", value: "毛玻璃风格，鲜艳渐变" },
+      { emoji: "📦", title: "主题", value: "SaaS产品的数据分析仪表板" },
+      { emoji: "💡", title: "元素", value: "磨砂玻璃卡片，发光图表，侧边栏" },
+      { emoji: "🌈", title: "颜色", value: "深太空蓝，明亮白色高光" },
+      { emoji: "📱", title: "布局", value: "基于卡片的响应式网格界面" },
+      { emoji: "✨", title: "效果", value: "模糊效果，微妙阴影，渐变叠加" }
     ],
     html: `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Glassmorphism Dashboard</title>
+    <title>毛玻璃仪表板</title>
 </head>
 <body>
     <div class="dashboard">
-        <h1>Analytics Dashboard</h1>
+        <h1>分析仪表板</h1>
         <div class="card">
-            <h2>Revenue</h2>
-            <p>$42,500</p>
+            <h2>营收</h2>
+            <p>¥425,000</p>
         </div>
     </div>
 </body>

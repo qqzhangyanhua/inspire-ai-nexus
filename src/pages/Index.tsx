@@ -5,7 +5,7 @@ import InspirationGrid from "@/components/InspirationGrid";
 import { useState } from "react";
 
 const Index = () => {
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedFilter, setSelectedFilter] = useState("全部");
   const [searchQuery, setSearchQuery] = useState("");
 
   return (

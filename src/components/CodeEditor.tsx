@@ -15,8 +15,8 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
   const copyToClipboard = (content: string, type: string) => {
     navigator.clipboard.writeText(content);
     toast({
-      title: "Copied!",
-      description: `${type} code copied to clipboard`,
+      title: "已复制！",
+      description: `${type} 代码已复制到剪贴板`,
     });
   };
 
@@ -29,7 +29,7 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
         className="absolute right-2 top-2 z-10 bg-background/80 hover:bg-background"
       >
         <Copy className="w-4 h-4 mr-1" />
-        Copy
+        复制
       </Button>
       <pre className="bg-slate-950 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm font-mono max-h-96 overflow-y-auto">
         <code>{code}</code>
@@ -40,7 +40,7 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
   return (
     <Card className="overflow-hidden">
       <div className="p-3 bg-muted/50 border-b border-border">
-        <h3 className="font-semibold text-foreground">Code Editor</h3>
+        <h3 className="font-semibold text-foreground">代码编辑器</h3>
       </div>
       
       <Tabs defaultValue="html" className="w-full">

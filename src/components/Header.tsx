@@ -33,13 +33,13 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
         {/* Center - Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <Link to="/" className="text-foreground hover:text-primary transition-colors">
-            Explore
+            探索
           </Link>
           <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-            Playground
+            工作台
           </span>
           <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-            Community
+            社区
           </span>
         </nav>
 
@@ -48,7 +48,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
           <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search inspiration..."
+              placeholder="搜索灵感..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-64 pl-10 bg-muted/50 border-muted"
@@ -59,7 +59,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
           {user && (
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
-              Contribute
+              贡献
             </Button>
           )}
           

@@ -8,13 +8,13 @@ interface FilterPillsProps {
 
 const FilterPills = ({ selectedFilter, onFilterChange }: FilterPillsProps) => {
   const filters = [
-    "All",
-    "Neumorphism", 
-    "Glassmorphism",
-    "Y2K",
-    "Aurora UI",
-    "Minimalist",
-    "Brutalist"
+    "全部",
+    "新拟物主义", 
+    "毛玻璃风格",
+    "Y2K风格",
+    "极光界面",
+    "极简主义",
+    "野兽派"
   ];
 
   return (
