@@ -1,5 +1,5 @@
 
-import { Search, User, LogOut, Plus } from "lucide-react";
+import { Search, User, LogOut, Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
@@ -35,9 +35,11 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
           <Link to="/" className="text-foreground hover:text-primary transition-colors">
             探索
           </Link>
-          <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-            工作台
-          </span>
+          {user && (
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+              工作台
+            </Link>
+          )}
           <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
             社区
           </span>
@@ -77,6 +79,13 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
                 <DropdownMenuItem className="font-medium">
                   {user.email}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <Link to="/dashboard">
+                  <DropdownMenuItem>
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    工作台
+                  </DropdownMenuItem>
+                </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
