@@ -175,10 +175,31 @@ const CaseDetail = () => {
   const parseCodeContent = (caseData: CaseData) => {
     // 优先使用新的分离字段
     if (caseData.html_content) {
+      const html = caseData.html_content || '';
+      const css = caseData.css_content || '';
+      const javascript = caseData.javascript_content || '';
+      
+      // 检测HTML内容中是否使用了Tailwind类名
+      const tailwindClassPattern = /class\s*=\s*["'][^"']*(?:bg-|text-|p-|m-|w-|h-|flex|grid|rounded|shadow|border|hover:|focus:|md:|lg:|xl:)/;
+      const usesTailwind = tailwindClassPattern.test(html);
+      
+      // 检查HTML是否已经包含Tailwind CDN
+      const hasTailwindCDN = html.includes('tailwindcss.com') || html.includes('cdn.tailwindcss.com');
+      
+      // 如果使用了Tailwind类名但没有CDN引用，需要在LivePreview中自动加载
+      if (usesTailwind && !hasTailwindCDN) {
+        // 通过特殊标记告诉LivePreview需要加载Tailwind
+        return {
+          html: html + '<!-- NEEDS_TAILWIND -->',
+          css,
+          javascript
+        };
+      }
+      
       return {
-        html: caseData.html_content || '',
-        css: caseData.css_content || '',
-        javascript: caseData.javascript_content || ''
+        html,
+        css,
+        javascript
       };
     }
 
