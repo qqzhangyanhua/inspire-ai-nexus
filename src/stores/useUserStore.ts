@@ -244,7 +244,7 @@ export const useUserStore = create<UserStore>()(
           // 获取用户案例
           const { data: cases, error: casesError } = await supabase
             .from('cases')
-            .select('view_count, like_count')
+            .select('id, view_count, like_count')
             .eq('author_id', user.id);
 
           if (casesError) throw casesError;
@@ -254,14 +254,20 @@ export const useUserStore = create<UserStore>()(
           const totalViews = cases?.reduce((sum, case_) => sum + (case_.view_count || 0), 0) || 0;
           const totalLikes = cases?.reduce((sum, case_) => sum + (case_.like_count || 0), 0) || 0;
 
-          // 获取评论数量
-          const { data: comments, error: commentsError } = await supabase
-            .from('case_comments')
-            .select('id')
-            .in('case_id', cases?.map((c: any) => c.id) || []);
+          // 获取评论数量 (只有当有案例时才查询)
+          let totalComments = 0;
+          if (cases && cases.length > 0) {
+            const caseIds = cases.map((c: any) => c.id);
+            const { data: comments, error: commentsError } = await supabase
+              .from('case_comments')
+              .select('id')
+              .in('case_id', caseIds);
 
-          if (commentsError && commentsError.code !== 'PGRST116') {
-            throw commentsError;
+            if (commentsError && commentsError.code !== 'PGRST116') {
+              throw commentsError;
+            }
+            
+            totalComments = comments?.length || 0;
           }
 
           // 获取收藏数量
@@ -278,7 +284,7 @@ export const useUserStore = create<UserStore>()(
             totalCases,
             totalViews,
             totalLikes,
-            totalComments: comments?.length || 0,
+            totalComments,
             totalFavorites: favorites?.length || 0,
           };
 
