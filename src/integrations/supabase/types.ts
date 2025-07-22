@@ -72,10 +72,13 @@ export type Database = {
           category_id: string | null
           code_content: string | null
           created_at: string
+          css_content: string | null
           description: string | null
+          html_content: string | null
           id: string
           image_url: string
           is_featured: boolean | null
+          javascript_content: string | null
           like_count: number | null
           preview_url: string | null
           prompt: string | null
@@ -90,10 +93,13 @@ export type Database = {
           category_id?: string | null
           code_content?: string | null
           created_at?: string
+          css_content?: string | null
           description?: string | null
+          html_content?: string | null
           id?: string
           image_url: string
           is_featured?: boolean | null
+          javascript_content?: string | null
           like_count?: number | null
           preview_url?: string | null
           prompt?: string | null
@@ -108,10 +114,13 @@ export type Database = {
           category_id?: string | null
           code_content?: string | null
           created_at?: string
+          css_content?: string | null
           description?: string | null
+          html_content?: string | null
           id?: string
           image_url?: string
           is_featured?: boolean | null
+          javascript_content?: string | null
           like_count?: number | null
           preview_url?: string | null
           prompt?: string | null

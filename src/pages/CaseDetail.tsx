@@ -17,7 +17,10 @@ interface CaseData {
   image_url: string;
   author_id: string;
   prompt: string;
-  code_content: string;
+  html_content: string;
+  css_content: string | null;
+  javascript_content: string | null;
+  code_content: string | null; // 保持兼容性，旧数据可能还有这个字段
   preview_url: string | null;
   tags: string[];
   view_count: number;
@@ -168,71 +171,87 @@ const CaseDetail = () => {
     }
   };
 
-  // 解析代码内容 - 处理不同的存储格式
-  const parseCodeContent = (codeContent: string) => {
-    // 尝试解析为JSON格式（新格式）
-    try {
-      const parsed = JSON.parse(codeContent);
-      if (parsed.html && parsed.css && parsed.javascript) {
-        return parsed;
+  // 解析代码内容 - 优先使用新的分离字段
+  const parseCodeContent = (caseData: CaseData) => {
+    // 优先使用新的分离字段
+    if (caseData.html_content) {
+      return {
+        html: caseData.html_content || '',
+        css: caseData.css_content || '',
+        javascript: caseData.javascript_content || ''
+      };
+    }
+
+    // 兼容旧的code_content字段
+    if (caseData.code_content) {
+      // 尝试解析为JSON格式（旧的混合格式）
+      try {
+        const parsed = JSON.parse(caseData.code_content);
+        if (parsed.html !== undefined) {
+          return {
+            html: parsed.html || '',
+            css: parsed.css || '',
+            javascript: parsed.javascript || ''
+          };
+        }
+      } catch {
+        // 如果不是JSON，说明是旧格式的HTML片段
       }
-    } catch {
-      // 如果不是JSON，说明是旧格式的HTML片段
+
+      // 处理简单HTML片段或URL格式（旧格式）
+      const isUrl = caseData.code_content.startsWith('http');
+      const isSimpleHtml = caseData.code_content.includes('<') && caseData.code_content.includes('>');
+
+      if (isUrl) {
+        // 如果是URL，返回一个iframe展示
+        return {
+          html: `<iframe src="${caseData.code_content}" width="100%" height="400px" frameborder="0"></iframe>`,
+          css: `body { margin: 0; padding: 0; }`,
+          javascript: ''
+        };
+      } else if (isSimpleHtml) {
+        // 如果是简单HTML片段，包装成完整页面
+        return {
+          html: caseData.code_content,
+          css: `
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 2rem;
+              background: #f8f9fa;
+            }
+            .blog {
+              background: white;
+              padding: 2rem;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1, h2, h3 {
+              color: #2c3e50;
+              margin-bottom: 1rem;
+            }
+            p {
+              margin-bottom: 1rem;
+              color: #555;
+            }
+          `,
+          javascript: ''
+        };
+      }
     }
 
-    // 处理简单HTML片段或URL格式（旧格式）
-    const isUrl = codeContent.startsWith('http');
-    const isSimpleHtml = codeContent.includes('<') && codeContent.includes('>');
-
-    if (isUrl) {
-      // 如果是URL，返回一个iframe展示
-      return {
-        html: `<iframe src="${codeContent}" width="100%" height="400px" frameborder="0"></iframe>`,
-        css: `body { margin: 0; padding: 0; }`,
-        javascript: ''
-      };
-    } else if (isSimpleHtml) {
-      // 如果是简单HTML片段，包装成完整页面
-      return {
-        html: codeContent,
-        css: `
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            background: #f8f9fa;
-          }
-          .blog {
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          }
-          h1, h2, h3 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
-          }
-          p {
-            margin-bottom: 1rem;
-            color: #555;
-          }
-        `,
-        javascript: ''
-      };
-    } else {
-      // 默认处理
-      return {
-        html: `<div style="padding: 2rem; text-align: center; color: #666;">
-                <h3>预览暂不可用</h3>
-                <p>该案例的预览内容格式暂不支持。</p>
-               </div>`,
-        css: '',
-        javascript: ''
-      };
-    }
+    // 默认处理
+    return {
+      html: `<div style="padding: 2rem; text-align: center; color: #666;">
+              <h3>预览暂不可用</h3>
+              <p>该案例的预览内容格式暂不支持。</p>
+             </div>`,
+      css: '',
+      javascript: ''
+    };
   };
 
   if (loading) {
@@ -265,7 +284,7 @@ const CaseDetail = () => {
     );
   }
 
-  const parsedCode = parseCodeContent(caseData.code_content);
+  const parsedCode = parseCodeContent(caseData);
 
   return (
     <div className="min-h-screen bg-background">

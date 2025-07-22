@@ -8,10 +8,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
+import { CodeEditorTabs } from "@/components/CodeEditorTabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,9 @@ const caseSchema = z.object({
   image_url: z.string().url("请输入有效的图片链接"),
   category_id: z.string().min(1, "请选择分类"),
   prompt: z.string().min(10, "提示词至少需要10个字符").max(1000, "提示词不能超过1000个字符"),
-  code_content: z.string().min(10, "代码内容至少需要10个字符").max(10000, "代码内容不能超过10000个字符"),
+  html_content: z.string().min(10, "HTML内容至少需要10个字符").max(10000, "HTML内容不能超过10000个字符"),
+  css_content: z.string().optional(),
+  javascript_content: z.string().optional(),
   preview_url: z.string().optional(),
   tags: z.array(z.string()).max(10, "标签数量不能超过10个"),
 });
@@ -57,7 +59,9 @@ const CreateCase = () => {
       image_url: "",
       category_id: "",
       prompt: "",
-      code_content: "",
+      html_content: "",
+      css_content: "",
+      javascript_content: "",
       preview_url: "",
       tags: [],
     },
@@ -121,7 +125,9 @@ const CreateCase = () => {
         image_url: data.image_url,
         category_id: data.category_id,
         prompt: data.prompt,
-        code_content: data.code_content,
+        html_content: data.html_content,
+        css_content: data.css_content || null,
+        javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
         author_id: user.id,
         status: 'draft',
@@ -181,7 +187,9 @@ const CreateCase = () => {
         image_url: data.image_url,
         category_id: data.category_id,
         prompt: data.prompt,
-        code_content: data.code_content,
+        html_content: data.html_content,
+        css_content: data.css_content || null,
+        javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
         author_id: user.id,
         status: 'published',
@@ -298,6 +306,23 @@ const CreateCase = () => {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="image_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>封面图片 *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="请输入图片链接" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        建议使用高质量的设计截图作为封面
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -305,10 +330,10 @@ const CreateCase = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>分类 *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="选择案例分类" />
+                              <SelectValue placeholder="选择分类" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -326,44 +351,21 @@ const CreateCase = () => {
 
                   <FormField
                     control={form.control}
-                    name="image_url"
+                    name="preview_url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>预览图片 *</FormLabel>
+                        <FormLabel>预览链接</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.jpg"
-                            {...field}
-                          />
+                          <Input placeholder="在线预览链接（可选）" {...field} />
                         </FormControl>
                         <FormDescription>
-                          请提供案例的预览图片链接
+                          可提供CodePen、JSFiddle等在线预览
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="preview_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>在线预览链接</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/demo (可选)"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        如果有在线演示，请提供链接
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </CardContent>
             </Card>
 
@@ -371,45 +373,24 @@ const CreateCase = () => {
             <Card>
               <CardHeader>
                 <CardTitle>内容详情</CardTitle>
-                <CardDescription>提供具体的实现内容</CardDescription>
+                <CardDescription>添加设计思路和提示词</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent>
                 <FormField
                   control={form.control}
                   name="prompt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>提示词 *</FormLabel>
+                      <FormLabel>设计提示 *</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="描述如何创建这个设计的提示词，包括设计要求、技术栈、实现思路等..."
+                          placeholder="请描述您的设计理念、灵感来源或给其他用户的设计建议..."
                           className="min-h-[120px]"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        详细的提示词有助于其他用户学习和复现
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="code_content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>代码内容 *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="请粘贴您的代码实现..."
-                          className="min-h-[300px] font-mono text-sm"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        包含HTML、CSS、JavaScript等相关代码
+                        分享您的设计思路，帮助其他用户理解和学习
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -417,6 +398,17 @@ const CreateCase = () => {
                 />
               </CardContent>
             </Card>
+
+            {/* 代码编辑器卡片 */}
+            <CodeEditorTabs
+              html={form.watch('html_content')}
+              css={form.watch('css_content') || ''}
+              javascript={form.watch('javascript_content') || ''}
+              onHtmlChange={(value) => form.setValue('html_content', value)}
+              onCssChange={(value) => form.setValue('css_content', value)}
+              onJavascriptChange={(value) => form.setValue('javascript_content', value)}
+              showPreview={true}
+            />
 
             {/* 标签卡片 */}
             <Card>
