@@ -241,18 +241,33 @@ export const useUserStore = create<UserStore>()(
         try {
           set({ statsLoading: true });
           
-          // 获取用户案例
+          // 获取用户案例基本信息
           const { data: cases, error: casesError } = await supabase
             .from('cases')
-            .select('id, view_count, like_count')
+            .select('id, view_count')
             .eq('author_id', user.id);
 
           if (casesError) throw casesError;
 
-          // 计算统计数据
+          // 计算基本统计数据
           const totalCases = cases?.length || 0;
           const totalViews = cases?.reduce((sum, case_) => sum + (case_.view_count || 0), 0) || 0;
-          const totalLikes = cases?.reduce((sum, case_) => sum + (case_.like_count || 0), 0) || 0;
+
+          // 获取真实的点赞数量 (从user_favorites表统计)
+          let totalLikes = 0;
+          if (cases && cases.length > 0) {
+            const caseIds = cases.map((c: any) => c.id);
+            const { data: likes, error: likesError } = await supabase
+              .from('user_favorites')
+              .select('case_id')
+              .in('case_id', caseIds);
+
+            if (likesError && likesError.code !== 'PGRST116') {
+              throw likesError;
+            }
+            
+            totalLikes = likes?.length || 0;
+          }
 
           // 获取评论数量 (只有当有案例时才查询)
           let totalComments = 0;
