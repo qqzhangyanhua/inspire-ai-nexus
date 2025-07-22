@@ -1,72 +1,103 @@
 
+import { useEffect, useState } from "react";
 import InspirationCard from "./InspirationCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserStore } from "@/stores/useUserStore";
 
 interface InspirationGridProps {
   selectedFilter: string;
   searchQuery: string;
 }
 
-const InspirationGrid = ({ selectedFilter, searchQuery }: InspirationGridProps) => {
-  // Mock data - in a real app, this would come from an API
-  const mockCards = [
-    {
-      id: "1",
-      title: "毛玻璃仪表板",
-      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
-      category: "毛玻璃风格",
-      isFavorited: false
-    },
-    {
-      id: "2", 
-      title: "新拟物计算器",
-      imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=350&fit=crop",
-      category: "新拟物主义",
-      isFavorited: true
-    },
-    {
-      id: "3",
-      title: "Y2K作品集网站",
-      imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=280&fit=crop",
-      category: "Y2K风格",
-      isFavorited: false
-    },
-    {
-      id: "4",
-      title: "极光登录表单",
-      imageUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=320&fit=crop",
-      category: "极光界面",
-      isFavorited: false
-    },
-    {
-      id: "5",
-      title: "极简博客",
-      imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop",
-      category: "极简主义",
-      isFavorited: true
-    },
-    {
-      id: "6",
-      title: "野兽派落地页",
-      imageUrl: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=400&h=280&fit=crop",
-      category: "野兽派",
-      isFavorited: false
-    }
-  ];
+interface CaseWithCategory {
+  id: string;
+  title: string;
+  image_url: string;
+  category: {
+    name_zh: string;
+  } | null;
+  isFavorited: boolean;
+}
 
-  const filteredCards = mockCards.filter(card => {
-    const matchesFilter = selectedFilter === "全部" || card.category === selectedFilter;
+const InspirationGrid = ({ selectedFilter, searchQuery }: InspirationGridProps) => {
+  const [cases, setCases] = useState<CaseWithCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user, favoriteIds, fetchFavorites } = useUserStore();
+
+  useEffect(() => {
+    fetchCases();
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user, fetchFavorites]);
+
+  const fetchCases = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cases')
+        .select(`
+          id,
+          title,
+          image_url,
+          category:categories(name_zh)
+        `)
+        .eq('status', 'published');
+
+      if (error) throw error;
+
+      const casesWithFavorites = data?.map(item => ({
+        id: item.id,
+        title: item.title,
+        image_url: item.image_url,
+        category: item.category,
+        isFavorited: favoriteIds.includes(item.id)
+      })) || [];
+
+      setCases(casesWithFavorites);
+    } catch (error) {
+      console.error('Error fetching cases:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 当收藏状态变化时更新案例列表
+  useEffect(() => {
+    setCases(prev => prev.map(item => ({
+      ...item,
+      isFavorited: favoriteIds.includes(item.id)
+    })));
+  }, [favoriteIds]);
+
+  const filteredCards = cases.filter(card => {
+    const categoryName = card.category?.name_zh || '';
+    const matchesFilter = selectedFilter === "全部" || categoryName === selectedFilter;
     const matchesSearch = searchQuery === "" || 
       card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.category.toLowerCase().includes(searchQuery.toLowerCase());
+      categoryName.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesFilter && matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="masonry-grid">
       {filteredCards.map((card) => (
         <div key={card.id} className="masonry-item">
-          <InspirationCard {...card} />
+          <InspirationCard 
+            id={card.id}
+            title={card.title}
+            imageUrl={card.image_url}
+            category={card.category?.name_zh || ''}
+            isFavorited={card.isFavorited}
+          />
         </div>
       ))}
     </div>

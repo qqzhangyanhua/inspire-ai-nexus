@@ -1,5 +1,7 @@
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FilterPillsProps {
   selectedFilter: string;
@@ -7,19 +9,41 @@ interface FilterPillsProps {
 }
 
 const FilterPills = ({ selectedFilter, onFilterChange }: FilterPillsProps) => {
-  const filters = [
-    "全部",
-    "新拟物主义", 
-    "毛玻璃风格",
-    "Y2K风格",
-    "极光界面",
-    "极简主义",
-    "野兽派"
-  ];
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name_zh')
+        .order('created_at');
+
+      if (error) throw error;
+
+      const categoryNames = data?.map(cat => cat.name_zh) || [];
+      setCategories(['全部', ...categoryNames]);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // 如果获取失败，使用默认分类
+      setCategories([
+        "全部",
+        "新拟物主义", 
+        "毛玻璃风格",
+        "Y2K风格",
+        "极光界面",
+        "极简主义",
+        "野兽派"
+      ]);
+    }
+  };
 
   return (
     <div className="flex flex-wrap gap-3 mb-8">
-      {filters.map((filter) => (
+      {categories.map((filter) => (
         <Button
           key={filter}
           variant={selectedFilter === filter ? "default" : "outline"}

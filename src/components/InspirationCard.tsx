@@ -1,9 +1,9 @@
-
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useUserStore } from "@/stores/useUserStore";
+import { useToast } from "@/hooks/use-toast";
 
 interface InspirationCardProps {
   id: string;
@@ -14,11 +14,43 @@ interface InspirationCardProps {
 }
 
 const InspirationCard = ({ id, title, imageUrl, category, isFavorited }: InspirationCardProps) => {
-  const [favorited, setFavorited] = useState(isFavorited);
+  const { user, addToFavorites, removeFromFavorites } = useUserStore();
+  const { toast } = useToast();
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setFavorited(!favorited);
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "请先登录",
+        description: "登录后才能收藏案例",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (isFavorited) {
+        await removeFromFavorites(id);
+        toast({
+          title: "取消收藏",
+          description: "已从收藏夹中移除"
+        });
+      } else {
+        await addToFavorites(id);
+        toast({
+          title: "收藏成功",
+          description: "已添加到收藏夹"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "操作失败",
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -49,7 +81,7 @@ const InspirationCard = ({ id, title, imageUrl, category, isFavorited }: Inspira
             >
               <Heart 
                 className={`w-4 h-4 transition-all duration-200 ${
-                  favorited 
+                  isFavorited 
                     ? "fill-red-500 text-red-500 scale-110" 
                     : "text-muted-foreground hover:text-red-500"
                 }`} 
