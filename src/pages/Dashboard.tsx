@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserStore } from "@/stores/useUserStore";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,89 +13,28 @@ import { Eye, Heart, MessageSquare, Plus, Edit, Trash2, Calendar, TrendingUp } f
 import { useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-interface UserStats {
-  totalCases: number;
-  totalViews: number;
-  totalLikes: number;
-  totalComments: number;
-}
-
-interface UserCase {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  view_count: number;
-  like_count: number;
-  status: string;
-  created_at: string;
-  tags: string[];
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
+  const { 
+    profile, 
+    stats, 
+    userCases, 
+    draftCases, 
+    profileLoading, 
+    statsLoading, 
+    casesLoading,
+    removeUserCase,
+    fetchStats 
+  } = useUserStore();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [stats, setStats] = useState<UserStats>({
-    totalCases: 0,
-    totalViews: 0,
-    totalLikes: 0,
-    totalComments: 0
-  });
-  const [userCases, setUserCases] = useState<UserCase[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
-      return;
     }
-    fetchDashboardData();
-  }, [user]);
-
-  const fetchDashboardData = async () => {
-    try {
-      // 获取用户案例
-      const { data: cases, error: casesError } = await supabase
-        .from('cases')
-        .select('*')
-        .eq('author_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (casesError) throw casesError;
-
-      setUserCases(cases || []);
-
-      // 计算统计数据
-      const totalViews = cases?.reduce((sum, case_) => sum + (case_.view_count || 0), 0) || 0;
-      const totalLikes = cases?.reduce((sum, case_) => sum + (case_.like_count || 0), 0) || 0;
-
-      // 获取评论数量
-      const { data: comments, error: commentsError } = await supabase
-        .from('case_comments')
-        .select('id')
-        .in('case_id', cases?.map(c => c.id) || []);
-
-      if (commentsError) throw commentsError;
-
-      setStats({
-        totalCases: cases?.length || 0,
-        totalViews,
-        totalLikes,
-        totalComments: comments?.length || 0
-      });
-    } catch (error) {
-      console.error('获取工作台数据失败:', error);
-      toast({
-        title: "加载失败",
-        description: "无法获取工作台数据，请稍后再试",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, navigate]);
 
   const handleDeleteCase = async (caseId: string) => {
     try {
@@ -105,7 +45,12 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      setUserCases(userCases.filter(c => c.id !== caseId));
+      // 从 store 中移除案例
+      removeUserCase(caseId);
+      
+      // 重新获取统计数据
+      fetchStats();
+      
       toast({
         title: "删除成功",
         description: "案例已成功删除",
@@ -132,6 +77,8 @@ const Dashboard = () => {
 
   if (!user) return null;
 
+  const loading = profileLoading || statsLoading || casesLoading;
+  const allUserCases = [...userCases, ...draftCases];
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -151,11 +98,15 @@ const Dashboard = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src="/placeholder-avatar.jpg" />
-              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url || "/placeholder-avatar.jpg"} />
+              <AvatarFallback>
+                {profile?.display_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">我的工作台</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                {profile?.display_name || '我的工作台'}
+              </h1>
               <p className="text-muted-foreground">管理您的创意案例和数据</p>
             </div>
           </div>
@@ -227,7 +178,7 @@ const Dashboard = () => {
                 <CardDescription>管理您已发布的创意案例</CardDescription>
               </CardHeader>
               <CardContent>
-                {userCases.filter(c => c.status === 'published').length === 0 ? (
+                {userCases.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground mb-4">您还没有发布任何案例</p>
                     <Button onClick={() => navigate('/contribute')}>
@@ -236,9 +187,7 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {userCases
-                      .filter(c => c.status === 'published')
-                      .map((case_) => (
+                    {userCases.map((case_) => (
                         <Card key={case_.id} className="group">
                           <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
                             <img 
@@ -337,15 +286,13 @@ const Dashboard = () => {
                 <CardDescription>管理您的草稿和待发布的案例</CardDescription>
               </CardHeader>
               <CardContent>
-                {userCases.filter(c => c.status === 'draft').length === 0 ? (
+                {draftCases.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">暂无草稿</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {userCases
-                      .filter(c => c.status === 'draft')
-                      .map((case_) => (
+                    {draftCases.map((case_) => (
                         <div key={case_.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                           <img 
                             src={case_.image_url} 
@@ -436,7 +383,7 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {userCases
+                    {allUserCases
                       .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
                       .slice(0, 5)
                       .map((case_, index) => (
