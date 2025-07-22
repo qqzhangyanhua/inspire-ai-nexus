@@ -56,6 +56,7 @@ interface UserState {
   
   // 收藏案例
   favoriteIds: string[];
+  favoriteCases: UserCase[];
   
   // 加载状态
   profileLoading: boolean;
@@ -88,9 +89,11 @@ interface UserActions {
   
   // 收藏管理动作
   setFavoriteIds: (ids: string[]) => void;
+  setFavoriteCases: (cases: UserCase[]) => void;
   addToFavorites: (caseId: string) => Promise<void>;
   removeFromFavorites: (caseId: string) => Promise<void>;
   fetchFavorites: () => Promise<void>;
+  fetchFavoriteCases: () => Promise<void>;
   
   // 清理动作
   clearUserData: () => void;
@@ -133,6 +136,7 @@ export const useUserStore = create<UserStore>()(
       userCases: [],
       draftCases: [],
       favoriteIds: [],
+      favoriteCases: [],
       profileLoading: false,
       statsLoading: false,
       casesLoading: false,
@@ -149,6 +153,10 @@ export const useUserStore = create<UserStore>()(
             store.fetchStats();
             store.fetchUserCases();
             store.fetchFavorites();
+            // 获取收藏列表后再获取详情
+            setTimeout(() => {
+              store.fetchFavoriteCases();
+            }, 100);
           }, 0);
         }
       },
@@ -163,9 +171,10 @@ export const useUserStore = create<UserStore>()(
             session: null,
             profile: null,
             stats: initialStats,
-            userCases: [],
-            draftCases: [],
-            favoriteIds: [],
+          userCases: [],
+          draftCases: [],
+          favoriteIds: [],
+          favoriteCases: [],
             loading: false,
           });
           
@@ -376,6 +385,8 @@ export const useUserStore = create<UserStore>()(
       // 收藏管理动作
       setFavoriteIds: (ids) => set({ favoriteIds: ids }),
 
+      setFavoriteCases: (cases) => set({ favoriteCases: cases }),
+
       addToFavorites: async (caseId) => {
         const { user, favoriteIds } = get();
         if (!user) throw new Error('用户未登录');
@@ -434,8 +445,35 @@ export const useUserStore = create<UserStore>()(
           
           const favoriteIds = data?.map(f => f.case_id) || [];
           set({ favoriteIds });
+          
+          // 获取收藏案例详情
+          get().fetchFavoriteCases();
         } catch (error) {
           console.error('获取收藏列表失败:', error);
+        }
+      },
+
+      fetchFavoriteCases: async () => {
+        const { user, favoriteIds } = get();
+        if (!user || favoriteIds.length === 0) {
+          set({ favoriteCases: [] });
+          return;
+        }
+
+        try {
+          const { data: cases, error } = await supabase
+            .from('cases')
+            .select('*')
+            .in('id', favoriteIds)
+            .eq('status', 'published')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          
+          set({ favoriteCases: cases || [] });
+        } catch (error) {
+          console.error('获取收藏案例详情失败:', error);
+          set({ favoriteCases: [] });
         }
       },
 
@@ -449,6 +487,7 @@ export const useUserStore = create<UserStore>()(
           userCases: [],
           draftCases: [],
           favoriteIds: [],
+          favoriteCases: [],
           loading: false,
         });
       },
@@ -463,6 +502,7 @@ export const useUserStore = create<UserStore>()(
         userCases: state.userCases,
         draftCases: state.draftCases,
         favoriteIds: state.favoriteIds,
+        favoriteCases: state.favoriteCases,
       }),
     }
   )

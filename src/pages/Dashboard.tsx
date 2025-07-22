@@ -20,6 +20,7 @@ const Dashboard = () => {
     stats, 
     userCases, 
     draftCases, 
+    favoriteCases,
     profileLoading, 
     statsLoading, 
     casesLoading,
@@ -168,6 +169,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="cases">我的案例</TabsTrigger>
             <TabsTrigger value="drafts">草稿箱</TabsTrigger>
+            <TabsTrigger value="favorites">我点赞的</TabsTrigger>
             <TabsTrigger value="analytics">数据分析</TabsTrigger>
           </TabsList>
 
@@ -338,6 +340,71 @@ const Dashboard = () => {
                             </AlertDialog>
                           </div>
                         </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="favorites" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>我点赞的案例</CardTitle>
+                <CardDescription>我收藏的优秀创意案例</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {favoriteCases.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">您还没有点赞任何案例</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {favoriteCases.map((case_) => (
+                        <Card key={case_.id} className="group cursor-pointer" onClick={() => navigate(`/case/${case_.id}`)}>
+                          <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
+                            <img 
+                              src={case_.image_url} 
+                              alt={case_.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-sm line-clamp-2">{case_.title}</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                              {case_.description}
+                            </p>
+                            
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                              <div className="flex items-center space-x-3">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="h-3 w-3" />
+                                  {case_.view_count || 0}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3 w-3 fill-current" />
+                                  {case_.like_count || 0}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(case_.created_at).toLocaleDateString('zh-CN')}
+                              </div>
+                            </div>
+
+                            {case_.tags && case_.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {case_.tags.slice(0, 3).map((tag, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       ))}
                   </div>
                 )}
