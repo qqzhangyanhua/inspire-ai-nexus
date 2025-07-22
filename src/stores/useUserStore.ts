@@ -88,8 +88,8 @@ interface UserActions {
   
   // 收藏管理动作
   setFavoriteIds: (ids: string[]) => void;
-  addToFavorites: (caseId: string) => void;
-  removeFromFavorites: (caseId: string) => void;
+  addToFavorites: (caseId: string) => Promise<void>;
+  removeFromFavorites: (caseId: string) => Promise<void>;
   fetchFavorites: () => Promise<void>;
   
   // 清理动作
@@ -355,16 +355,46 @@ export const useUserStore = create<UserStore>()(
       // 收藏管理动作
       setFavoriteIds: (ids) => set({ favoriteIds: ids }),
 
-      addToFavorites: (caseId) => {
-        const { favoriteIds } = get();
-        if (!favoriteIds.includes(caseId)) {
+      addToFavorites: async (caseId) => {
+        const { user, favoriteIds } = get();
+        if (!user) throw new Error('用户未登录');
+        
+        if (favoriteIds.includes(caseId)) return;
+
+        try {
+          const { data, error } = await supabase.rpc('toggle_case_favorite', {
+            case_id: caseId
+          });
+
+          if (error) throw error;
+
+          // 只有当数据库操作成功时才更新本地状态
           set({ favoriteIds: [...favoriteIds, caseId] });
+        } catch (error) {
+          console.error('添加收藏失败:', error);
+          throw error;
         }
       },
 
-      removeFromFavorites: (caseId) => {
-        const { favoriteIds } = get();
-        set({ favoriteIds: favoriteIds.filter(id => id !== caseId) });
+      removeFromFavorites: async (caseId) => {
+        const { user, favoriteIds } = get();
+        if (!user) throw new Error('用户未登录');
+        
+        if (!favoriteIds.includes(caseId)) return;
+
+        try {
+          const { data, error } = await supabase.rpc('toggle_case_favorite', {
+            case_id: caseId
+          });
+
+          if (error) throw error;
+
+          // 只有当数据库操作成功时才更新本地状态
+          set({ favoriteIds: favoriteIds.filter(id => id !== caseId) });
+        } catch (error) {
+          console.error('取消收藏失败:', error);
+          throw error;
+        }
       },
 
       fetchFavorites: async () => {
