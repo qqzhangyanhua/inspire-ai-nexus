@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface CodeEditorProps {
   html: string;
@@ -20,7 +22,7 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
     });
   };
 
-  const CodeBlock = ({ code, language }: { code: string; language: string }) => (
+  const CodeBlock = ({ code, language, syntaxLanguage }: { code: string; language: string; syntaxLanguage: string }) => (
     <div className="relative">
       <Button
         variant="ghost"
@@ -31,9 +33,19 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
         <Copy className="w-4 h-4 mr-1" />
         复制
       </Button>
-      <pre className="bg-slate-950 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm font-mono max-h-96 overflow-y-auto">
-        <code>{code}</code>
-      </pre>
+      <SyntaxHighlighter
+        language={syntaxLanguage}
+        style={oneDark}
+        className="!bg-slate-950 !text-slate-100 !p-4 !rounded-lg !text-sm !font-mono !max-h-96 !overflow-y-auto"
+        customStyle={{
+          margin: 0,
+          borderRadius: '0.5rem',
+          maxHeight: '384px',
+          fontSize: '0.875rem',
+        }}
+      >
+        {code}
+      </SyntaxHighlighter>
     </div>
   );
 
@@ -57,15 +69,15 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
         </TabsList>
         
         <TabsContent value="html" className="p-4 m-0">
-          <CodeBlock code={html} language="HTML" />
+          <CodeBlock code={html} language="HTML" syntaxLanguage="markup" />
         </TabsContent>
         
         <TabsContent value="css" className="p-4 m-0">
-          <CodeBlock code={css} language="CSS" />
+          <CodeBlock code={css} language="CSS" syntaxLanguage="css" />
         </TabsContent>
         
         <TabsContent value="javascript" className="p-4 m-0">
-          <CodeBlock code={javascript} language="JavaScript" />
+          <CodeBlock code={javascript} language="JavaScript" syntaxLanguage="javascript" />
         </TabsContent>
       </Tabs>
     </Card>
