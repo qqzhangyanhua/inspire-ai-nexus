@@ -1,88 +1,271 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserStore } from "@/stores/useUserStore";
 import Header from "@/components/Header";
 import LivePreview from "@/components/LivePreview";
 import CodeEditor from "@/components/CodeEditor";
 import CaseMetadata from "@/components/CaseMetadata";
-import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+
+interface CaseData {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  author_id: string;
+  prompt: string;
+  code_content: string;
+  preview_url: string | null;
+  tags: string[];
+  view_count: number;
+  like_count: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  // 作者信息
+  author?: {
+    display_name: string;
+    username: string;
+    avatar_url: string | null;
+  };
+}
 
 const CaseDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, favoriteIds, addToFavorites, removeFromFavorites } = useUserStore();
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [caseData, setCaseData] = useState<CaseData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
 
-  // Mock data - in a real app, this would come from an API
-  const caseData = {
-    id: id || "1",
-    title: "毛玻璃仪表板",
-    tags: ["毛玻璃风格", "仪表板", "现代", "SaaS"],
-    contributor: {
-      name: "陈小明",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
-    },
-    prompt: "创建一个采用毛玻璃设计原则的精美数据分析仪表板。使用带有微妙透明度的磨砂玻璃卡片、发光元素和深色太空主题。包含交互式图表、侧边栏导航，以及深蓝和紫色调的鲜艳渐变装饰。",
-    structuredBreakdown: [
-      { emoji: "🎨", title: "风格", value: "毛玻璃风格，鲜艳渐变" },
-      { emoji: "📦", title: "主题", value: "SaaS产品的数据分析仪表板" },
-      { emoji: "💡", title: "元素", value: "磨砂玻璃卡片，发光图表，侧边栏" },
-      { emoji: "🌈", title: "颜色", value: "深太空蓝，明亮白色高光" },
-      { emoji: "📱", title: "布局", value: "基于卡片的响应式网格界面" },
-      { emoji: "✨", title: "效果", value: "模糊效果，微妙阴影，渐变叠加" }
-    ],
-    html: `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>毛玻璃仪表板</title>
-</head>
-<body>
-    <div class="dashboard">
-        <h1>分析仪表板</h1>
-        <div class="card">
-            <h2>营收</h2>
-            <p>¥425,000</p>
-        </div>
-    </div>
-</body>
-</html>`,
-    css: `body {
-  margin: 0;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  font-family: 'Inter', sans-serif;
-  min-height: 100vh;
-}
+  // 获取案例详情
+  const fetchCaseDetail = async () => {
+    if (!id) return;
 
-.dashboard {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+    try {
+      setLoading(true);
 
-.card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  padding: 2rem;
-  margin: 1rem 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}`,
-    javascript: `// Interactive dashboard functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const cards = document.querySelectorAll('.card');
-    
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.transition = 'transform 0.3s ease';
+      // 增加浏览量
+      await supabase.rpc('increment_case_view_count', { case_id: id });
+
+      // 获取案例详情和作者信息
+      const { data: caseInfo, error } = await supabase
+        .from('cases')
+        .select(`
+          *,
+          profiles:author_id (
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('获取案例详情失败:', error);
+        toast({
+          title: "获取失败",
+          description: "无法获取案例详情，请稍后再试",
+          variant: "destructive",
         });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
+        return;
+      }
+
+      if (!caseInfo) {
+        toast({
+          title: "案例不存在",
+          description: "该案例可能已被删除或不存在",
+          variant: "destructive",
         });
-    });
-});`
+        navigate('/');
+        return;
+      }
+
+      // 检查案例状态
+      if (caseInfo.status !== 'published' && caseInfo.author_id !== user?.id) {
+        toast({
+          title: "案例不可访问",
+          description: "该案例尚未发布或您没有访问权限",
+          variant: "destructive",
+        });
+        navigate('/');
+        return;
+      }
+
+      const transformedData: CaseData = {
+        ...caseInfo,
+        author: caseInfo.profiles ? {
+          display_name: caseInfo.profiles.display_name || '未知用户',
+          username: caseInfo.profiles.username || 'unknown',
+          avatar_url: caseInfo.profiles.avatar_url
+        } : undefined
+      };
+
+      setCaseData(transformedData);
+      setIsLiked(favoriteIds.includes(id));
+
+    } catch (error) {
+      console.error('获取案例详情失败:', error);
+      toast({
+        title: "获取失败",
+        description: "网络错误，请检查网络连接",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchCaseDetail();
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      setIsLiked(favoriteIds.includes(id));
+    }
+  }, [favoriteIds, id]);
+
+  // 处理点赞
+  const handleToggleLike = async () => {
+    if (!user || !id) {
+      toast({
+        title: "请先登录",
+        description: "登录后才能点赞案例",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isLiked) {
+        await removeFromFavorites(id);
+        toast({
+          title: "取消点赞",
+          description: "已取消点赞该案例",
+        });
+      } else {
+        await addToFavorites(id);
+        toast({
+          title: "点赞成功",
+          description: "感谢您的支持！",
+        });
+      }
+    } catch (error) {
+      console.error('点赞操作失败:', error);
+      toast({
+        title: "操作失败",
+        description: "点赞操作失败，请稍后再试",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 解析代码内容 - 处理不同的存储格式
+  const parseCodeContent = (codeContent: string) => {
+    // 尝试解析为JSON格式（新格式）
+    try {
+      const parsed = JSON.parse(codeContent);
+      if (parsed.html && parsed.css && parsed.javascript) {
+        return parsed;
+      }
+    } catch {
+      // 如果不是JSON，说明是旧格式的HTML片段
+    }
+
+    // 处理简单HTML片段或URL格式（旧格式）
+    const isUrl = codeContent.startsWith('http');
+    const isSimpleHtml = codeContent.includes('<') && codeContent.includes('>');
+
+    if (isUrl) {
+      // 如果是URL，返回一个iframe展示
+      return {
+        html: `<iframe src="${codeContent}" width="100%" height="400px" frameborder="0"></iframe>`,
+        css: `body { margin: 0; padding: 0; }`,
+        javascript: ''
+      };
+    } else if (isSimpleHtml) {
+      // 如果是简单HTML片段，包装成完整页面
+      return {
+        html: codeContent,
+        css: `
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8f9fa;
+          }
+          .blog {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          h1, h2, h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+          }
+          p {
+            margin-bottom: 1rem;
+            color: #555;
+          }
+        `,
+        javascript: ''
+      };
+    } else {
+      // 默认处理
+      return {
+        html: `<div style="padding: 2rem; text-align: center; color: #666;">
+                <h3>预览暂不可用</h3>
+                <p>该案例的预览内容格式暂不支持。</p>
+               </div>`,
+        css: '',
+        javascript: ''
+      };
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">加载案例详情中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!caseData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">案例不存在</h1>
+            <p className="text-muted-foreground">该案例可能已被删除或不存在</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const parsedCode = parseCodeContent(caseData.code_content);
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,21 +276,25 @@ document.addEventListener('DOMContentLoaded', function() {
           {/* Left Column - Content */}
           <div className="lg:col-span-2 space-y-6">
             <LivePreview 
-              html={caseData.html}
-              css={caseData.css}
-              javascript={caseData.javascript}
+              html={parsedCode.html}
+              css={parsedCode.css}
+              javascript={parsedCode.javascript}
             />
             
             <CodeEditor 
-              html={caseData.html}
-              css={caseData.css}
-              javascript={caseData.javascript}
+              html={parsedCode.html}
+              css={parsedCode.css}
+              javascript={parsedCode.javascript}
             />
           </div>
           
           {/* Right Column - Metadata */}
           <div className="lg:col-span-1">
-            <CaseMetadata caseData={caseData} />
+            <CaseMetadata 
+              caseData={caseData} 
+              isLiked={isLiked}
+              onToggleLike={handleToggleLike}
+            />
           </div>
         </div>
       </main>
