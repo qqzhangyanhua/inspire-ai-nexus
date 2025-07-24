@@ -1,14 +1,15 @@
+'use client';
 
-import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useUserStore } from "@/stores/useUserStore";
-import Header from "@/components/Header";
-import LivePreview from "@/components/LivePreview";
-import CodeEditor from "@/components/CodeEditor";
-import CaseMetadata from "@/components/CaseMetadata";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useUserStore } from '@/stores/useUserStore';
+import Header from '@/components/Header';
+import LivePreview from '@/components/LivePreview';
+import CodeEditor from '@/components/CodeEditor';
+import CaseMetadata from '@/components/CaseMetadata';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface CaseData {
   id: string;
@@ -36,16 +37,18 @@ interface CaseData {
   };
 }
 
-const CaseDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function CaseDetailPage() {
+  const params = useParams();
+  const router = useRouter();
   const { toast } = useToast();
   const { user, favoriteIds, addToFavorites, removeFromFavorites } = useUserStore();
   
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
+
+  const id = params.id as string;
 
   // 获取案例详情
   const fetchCaseDetail = async () => {
@@ -74,31 +77,31 @@ const CaseDetail = () => {
       if (error) {
         console.error('获取案例详情失败:', error);
         toast({
-          title: "获取失败",
-          description: "无法获取案例详情，请稍后再试",
-          variant: "destructive",
+          title: '获取失败',
+          description: '无法获取案例详情，请稍后再试',
+          variant: 'destructive',
         });
         return;
       }
 
       if (!caseInfo) {
         toast({
-          title: "案例不存在",
-          description: "该案例可能已被删除或不存在",
-          variant: "destructive",
+          title: '案例不存在',
+          description: '该案例可能已被删除或不存在',
+          variant: 'destructive',
         });
-        navigate('/');
+        router.push('/');
         return;
       }
 
       // 检查案例状态
       if (caseInfo.status !== 'published' && caseInfo.author_id !== user?.id) {
         toast({
-          title: "案例不可访问",
-          description: "该案例尚未发布或您没有访问权限",
-          variant: "destructive",
+          title: '案例不可访问',
+          description: '该案例尚未发布或您没有访问权限',
+          variant: 'destructive',
         });
-        navigate('/');
+        router.push('/');
         return;
       }
 
@@ -117,9 +120,9 @@ const CaseDetail = () => {
     } catch (error) {
       console.error('获取案例详情失败:', error);
       toast({
-        title: "获取失败",
-        description: "网络错误，请检查网络连接",
-        variant: "destructive",
+        title: '获取失败',
+        description: '网络错误，请检查网络连接',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -140,9 +143,9 @@ const CaseDetail = () => {
   const handleToggleLike = async () => {
     if (!user || !id) {
       toast({
-        title: "请先登录",
-        description: "登录后才能点赞案例",
-        variant: "destructive",
+        title: '请先登录',
+        description: '登录后才能点赞案例',
+        variant: 'destructive',
       });
       return;
     }
@@ -151,22 +154,22 @@ const CaseDetail = () => {
       if (isLiked) {
         await removeFromFavorites(id);
         toast({
-          title: "取消点赞",
-          description: "已取消点赞该案例",
+          title: '取消点赞',
+          description: '已取消点赞该案例',
         });
       } else {
         await addToFavorites(id);
         toast({
-          title: "点赞成功",
-          description: "感谢您的支持！",
+          title: '点赞成功',
+          description: '感谢您的支持！',
         });
       }
     } catch (error) {
       console.error('点赞操作失败:', error);
       toast({
-        title: "操作失败",
-        description: "点赞操作失败，请稍后再试",
-        variant: "destructive",
+        title: '操作失败',
+        description: '点赞操作失败，请稍后再试',
+        variant: 'destructive',
       });
     }
   };
@@ -340,6 +343,4 @@ const CaseDetail = () => {
       </main>
     </div>
   );
-};
-
-export default CaseDetail;
+}

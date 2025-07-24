@@ -1,36 +1,38 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserStore } from "@/stores/useUserStore";
-import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/Header";
-import { CodeEditorTabs } from "@/components/CodeEditorTabs";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserStore } from '@/stores/useUserStore';
+import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/Header';
+import { CodeEditorTabs } from '@/components/CodeEditorTabs';
 import {
   ensureStorageBucket,
   uploadFile,
-} from "@/integrations/supabase/storage";
+} from '@/integrations/supabase/storage';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
   Form,
   FormControl,
@@ -39,30 +41,30 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { ArrowLeft, Plus, X, Save, Send, Upload, Trash2 } from "lucide-react";
+} from '@/components/ui/form';
+import { ArrowLeft, Plus, X, Save, Send, Loader2, Upload, Trash2 } from 'lucide-react';
 
 // 表单验证 schema
 const caseSchema = z.object({
-  title: z.string().min(1, "请输入案例标题").max(100, "标题不能超过100个字符"),
+  title: z.string().min(1, '请输入案例标题').max(100, '标题不能超过100个字符'),
   description: z
     .string()
-    .min(10, "描述至少需要10个字符")
-    .max(500, "描述不能超过500个字符"),
+    .min(10, '描述至少需要10个字符')
+    .max(500, '描述不能超过500个字符'),
   image_url: z.string().optional(), // 改为可选，因为我们用本地状态管理
-  category_id: z.string().min(1, "请选择分类"),
+  category_id: z.string().min(1, '请选择分类'),
   prompt: z
     .string()
-    .min(10, "提示词至少需要10个字符")
-    .max(1000, "提示词不能超过1000个字符"),
+    .min(10, '提示词至少需要10个字符')
+    .max(1000, '提示词不能超过1000个字符'),
   html_content: z
     .string()
-    .min(10, "HTML内容至少需要10个字符")
-    .max(10000, "HTML内容不能超过10000个字符"),
+    .min(10, 'HTML内容至少需要10个字符')
+    .max(10000, 'HTML内容不能超过10000个字符'),
   css_content: z.string().optional(),
   javascript_content: z.string().optional(),
   preview_url: z.string().optional(),
-  tags: z.array(z.string()).max(10, "标签数量不能超过10个"),
+  tags: z.array(z.string()).max(10, '标签数量不能超过10个'),
 });
 
 type CaseFormData = z.infer<typeof caseSchema>;
@@ -73,73 +75,78 @@ interface Category {
   name_zh: string;
 }
 
-const CreateCase = () => {
+interface CaseData {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+  category_id: string;
+  prompt: string;
+  html_content: string;
+  css_content: string | null;
+  javascript_content: string | null;
+  preview_url: string | null;
+  tags: string[];
+  status: string;
+  author_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export default function EditCasePage() {
+  const params = useParams();
+  const id = params?.id as string;
   const { user } = useAuth();
-  const { addUserCase } = useUserStore();
+  const { updateUserCase } = useUserStore();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [caseData, setCaseData] = useState<CaseData | null>(null);
   // 添加图片上传相关状态
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [bucketReady, setBucketReady] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [localPreviewUrl, setLocalPreviewUrl] = useState<string>("");
-  const [remoteImageUrl, setRemoteImageUrl] = useState<string>("");
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string>('');
+  const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
+  const [originalImageUrl, setOriginalImageUrl] = useState<string>('');
 
   const form = useForm<CaseFormData>({
     resolver: zodResolver(caseSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      image_url: "",
-      category_id: "",
-      prompt: "",
-      html_content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tailwind CSS Demo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-
-    <div class="text-center p-8 bg-white rounded-lg shadow-lg">
-      <h1 class="text-4xl font-bold text-blue-600 mb-4">
-        Hello, Tailwind CSS!
-      </h1>
-      <p class="text-gray-700">
-        现在你可以直接在 HTML 标签中使用 Tailwind 的功能类了。
-      </p>
-      <div class="mt-6">
-        <a href="#" class="px-5 py-3 bg-indigo-500 text-white font-semibold rounded-md hover:bg-indigo-600 transition duration-300">
-          Get Started
-        </a>
-      </div>
-    </div>
-
-</body>
-</html>`,
-      css_content: "",
-      javascript_content: "",
-      preview_url: "",
+      title: '',
+      description: '',
+      image_url: '',
+      category_id: '',
+      prompt: '',
+      html_content: '',
+      css_content: '',
+      javascript_content: '',
+      preview_url: '',
       tags: [],
     },
   });
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      router.push('/auth');
       return;
     }
+
+    if (!id) {
+      router.push('/dashboard');
+      return;
+    }
+
+    fetchCaseData();
     fetchCategories();
     checkStorageBucket();
-  }, [user, navigate]);
+  }, [user, id, router]);
 
   // 清理本地预览URL，避免内存泄漏
   useEffect(() => {
@@ -153,18 +160,99 @@ const CreateCase = () => {
   // 检查存储桶是否准备就绪
   const checkStorageBucket = async () => {
     try {
-      const ready = await ensureStorageBucket("images");
+      const ready = await ensureStorageBucket('images');
       setBucketReady(ready);
       if (!ready) {
         toast({
-          title: "存储桶不存在",
-          description: "请在 Supabase 控制台创建 images 存储桶并配置 RLS 策略",
-          variant: "destructive",
+          title: '存储桶不存在',
+          description: '请在 Supabase 控制台创建 images 存储桶并配置 RLS 策略',
+          variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error("检查存储桶时出错:", error);
+      console.error('检查存储桶时出错:', error);
       setBucketReady(false);
+    }
+  };
+
+  // 获取案例数据
+  const fetchCaseData = async () => {
+    if (!id) return;
+
+    try {
+      setIsLoading(true);
+
+      const { data: caseInfo, error } = await supabase
+        .from('cases')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('获取案例数据失败:', error);
+        toast({
+          title: '获取失败',
+          description: '无法获取案例数据，请稍后再试',
+          variant: 'destructive',
+        });
+        router.push('/dashboard');
+        return;
+      }
+
+      if (!caseInfo) {
+        toast({
+          title: '案例不存在',
+          description: '该案例可能已被删除或不存在',
+          variant: 'destructive',
+        });
+        router.push('/dashboard');
+        return;
+      }
+
+      // 检查权限 - 只有案例作者可以编辑
+      if (caseInfo.author_id !== user?.id) {
+        toast({
+          title: '无权限编辑',
+          description: '您只能编辑自己创建的案例',
+          variant: 'destructive',
+        });
+        router.push('/dashboard');
+        return;
+      }
+
+      setCaseData(caseInfo);
+
+      // 保存原始图片URL并设置为当前远程URL
+      setOriginalImageUrl(caseInfo.image_url);
+      setRemoteImageUrl(caseInfo.image_url);
+
+      // 设置表单默认值
+      const formData = {
+        title: caseInfo.title,
+        description: caseInfo.description || '',
+        image_url: caseInfo.image_url,
+        category_id: caseInfo.category_id || '',
+        prompt: caseInfo.prompt || '',
+        html_content: caseInfo.html_content || '',
+        css_content: caseInfo.css_content || '',
+        javascript_content: caseInfo.javascript_content || '',
+        preview_url: caseInfo.preview_url || '',
+        tags: caseInfo.tags || [],
+      };
+
+      // 重置表单并设置新的默认值
+      form.reset(formData);
+      setTags(caseInfo.tags || []);
+    } catch (error) {
+      console.error('获取案例数据失败:', error);
+      toast({
+        title: '获取失败',
+        description: '网络错误，请检查网络连接',
+        variant: 'destructive',
+      });
+      router.push('/dashboard');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -172,18 +260,18 @@ const CreateCase = () => {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from("categories")
-        .select("id, name, name_zh")
-        .order("created_at");
+        .from('categories')
+        .select('id, name, name_zh')
+        .order('created_at');
 
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
-      console.error("获取分类失败:", error);
+      console.error('获取分类失败:', error);
       toast({
-        title: "获取分类失败",
-        description: "无法获取分类列表，请稍后再试",
-        variant: "destructive",
+        title: '获取分类失败',
+        description: '无法获取分类列表，请稍后再试',
+        variant: 'destructive',
       });
     }
   };
@@ -204,7 +292,7 @@ const CreateCase = () => {
       await uploadImage(file);
 
       // 重置文件输入，允许重复选择相同文件
-      e.target.value = "";
+      e.target.value = '';
     }
   };
 
@@ -212,9 +300,9 @@ const CreateCase = () => {
   const uploadImage = async (file: File) => {
     if (!bucketReady) {
       toast({
-        title: "存储未就绪",
-        description: "存储系统未准备就绪，请稍后再试",
-        variant: "destructive",
+        title: '存储未就绪',
+        description: '存储系统未准备就绪，请稍后再试',
+        variant: 'destructive',
       });
       return;
     }
@@ -223,23 +311,23 @@ const CreateCase = () => {
       setUploadingImage(true);
 
       // 使用封装的上传函数
-      const result = await uploadFile(file, "images", "public");
+      const result = await uploadFile(file, 'images', 'public');
 
       // 保存远程图片URL，但不立即更新预览（保持本地预览）
       setRemoteImageUrl(result.fullPath);
 
       toast({
-        title: "上传成功",
-        description: "封面图片已成功上传",
+        title: '上传成功',
+        description: '封面图片已成功上传',
       });
     } catch (error: unknown) {
-      console.error("上传错误:", error);
+      console.error('上传错误:', error);
       const errorMessage =
-        error instanceof Error ? error.message : "图片上传过程中发生错误";
+        error instanceof Error ? error.message : '图片上传过程中发生错误';
       toast({
-        title: "上传失败",
+        title: '上传失败',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
       // 上传失败时清空文件选择
       setImageFile(null);
@@ -256,9 +344,9 @@ const CreateCase = () => {
     }
     
     setImageFile(null);
-    setLocalPreviewUrl("");
-    setRemoteImageUrl("");
-    form.setValue("image_url", "");
+    setLocalPreviewUrl('');
+    setRemoteImageUrl('');
+    form.setValue('image_url', '');
   };
 
   // 处理拖拽事件
@@ -281,26 +369,26 @@ const CreateCase = () => {
 
     if (uploadingImage || !bucketReady) return;
 
-          const files = e.dataTransfer.files;
-      if (files && files.length > 0) {
-        const file = files[0];
-        // 检查是否为图片文件
-        if (file.type.startsWith("image/")) {
-          setImageFile(file);
-          
-          // 立即创建本地预览
-          const previewUrl = URL.createObjectURL(file);
-          setLocalPreviewUrl(previewUrl);
-          
-          await uploadImage(file);
-        } else {
-          toast({
-            title: "文件类型错误",
-            description: "请选择图片文件（JPG、PNG、GIF）",
-            variant: "destructive",
-          });
-        }
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // 检查是否为图片文件
+      if (file.type.startsWith('image/')) {
+        setImageFile(file);
+        
+        // 立即创建本地预览
+        const previewUrl = URL.createObjectURL(file);
+        setLocalPreviewUrl(previewUrl);
+        
+        await uploadImage(file);
+      } else {
+        toast({
+          title: '文件类型错误',
+          description: '请选择图片文件（JPG、PNG、GIF）',
+          variant: 'destructive',
+        });
       }
+    }
   };
 
   // 添加标签
@@ -309,8 +397,8 @@ const CreateCase = () => {
     if (tag && !tags.includes(tag) && tags.length < 10) {
       const newTags = [...tags, tag];
       setTags(newTags);
-      form.setValue("tags", newTags);
-      setTagInput("");
+      form.setValue('tags', newTags);
+      setTagInput('');
     }
   };
 
@@ -318,75 +406,69 @@ const CreateCase = () => {
   const removeTag = (tagToRemove: string) => {
     const newTags = tags.filter((tag) => tag !== tagToRemove);
     setTags(newTags);
-    form.setValue("tags", newTags);
+    form.setValue('tags', newTags);
   };
 
-  // 保存草稿
+  // 更新为草稿
   const saveDraft = async (data: CaseFormData) => {
-    if (!user) return;
+    if (!user || !id) return;
 
-    // 检查是否有远程图片URL
-    if (!remoteImageUrl) {
+    // 确定要使用的图片URL
+    const imageUrlToUse = remoteImageUrl || originalImageUrl;
+    if (!imageUrlToUse) {
       toast({
-        title: "请等待图片上传完成",
-        description: "图片正在上传中，请稍候再试",
-        variant: "destructive",
+        title: '请上传封面图片',
+        description: '案例需要封面图片才能保存',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const caseData = {
+      const updateData = {
         title: data.title,
         description: data.description,
-        image_url: remoteImageUrl, // 使用远程图片URL
+        image_url: imageUrlToUse,
         category_id: data.category_id,
         prompt: data.prompt,
         html_content: data.html_content,
         css_content: data.css_content || null,
         javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
-        author_id: user.id,
-        status: "draft",
+        status: 'draft',
         tags: tags,
+        updated_at: new Date().toISOString(),
       };
 
-      const { data: newCase, error } = await supabase
-        .from("cases")
-        .insert(caseData)
-        .select()
-        .single();
+      const { error } = await supabase
+        .from('cases')
+        .update(updateData)
+        .eq('id', id);
 
       if (error) throw error;
 
-      // 确保数据结构匹配 UserCase 接口
-      const userCaseData = {
-        id: newCase.id,
-        title: newCase.title,
-        description: newCase.description || "",
-        image_url: newCase.image_url,
-        view_count: newCase.view_count || 0,
-        like_count: newCase.like_count || 0,
-        status: newCase.status,
-        created_at: newCase.created_at,
-        tags: newCase.tags || [],
-      };
-
-      addUserCase(userCaseData);
-
-      toast({
-        title: "草稿保存成功",
-        description: "您可以在个人中心继续编辑",
+      // 更新本地store中的数据
+      updateUserCase(id, {
+        title: data.title,
+        description: data.description,
+        image_url: imageUrlToUse,
+        status: 'draft',
+        tags: tags,
       });
 
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("保存草稿失败:", error);
       toast({
-        title: "保存草稿失败",
-        description: "无法保存草稿，请稍后再试",
-        variant: "destructive",
+        title: '草稿保存成功',
+        description: '案例已保存为草稿',
+      });
+
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('保存草稿失败:', error);
+      toast({
+        title: '保存草稿失败',
+        description: '无法保存草稿，请稍后再试',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -395,70 +477,64 @@ const CreateCase = () => {
 
   // 发布案例
   const publishCase = async (data: CaseFormData) => {
-    if (!user) return;
+    if (!user || !id) return;
 
-    // 检查是否有远程图片URL
-    if (!remoteImageUrl) {
+    // 确定要使用的图片URL
+    const imageUrlToUse = remoteImageUrl || originalImageUrl;
+    if (!imageUrlToUse) {
       toast({
-        title: "请等待图片上传完成",
-        description: "图片正在上传中，请稍候再试",
-        variant: "destructive",
+        title: '请上传封面图片',
+        description: '案例需要封面图片才能发布',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const caseData = {
+      const updateData = {
         title: data.title,
         description: data.description,
-        image_url: remoteImageUrl, // 使用远程图片URL
+        image_url: imageUrlToUse,
         category_id: data.category_id,
         prompt: data.prompt,
         html_content: data.html_content,
         css_content: data.css_content || null,
         javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
-        author_id: user.id,
-        status: "published",
+        status: 'published',
         tags: tags,
+        updated_at: new Date().toISOString(),
       };
 
-      const { data: newCase, error } = await supabase
-        .from("cases")
-        .insert(caseData)
-        .select()
-        .single();
+      const { error } = await supabase
+        .from('cases')
+        .update(updateData)
+        .eq('id', id);
 
       if (error) throw error;
 
-      // 确保数据结构匹配 UserCase 接口
-      const userCaseData = {
-        id: newCase.id,
-        title: newCase.title,
-        description: newCase.description || "",
-        image_url: newCase.image_url,
-        view_count: newCase.view_count || 0,
-        like_count: newCase.like_count || 0,
-        status: newCase.status,
-        created_at: newCase.created_at,
-        tags: newCase.tags || [],
-      };
-
-      addUserCase(userCaseData);
-
-      toast({
-        title: "发布成功",
-        description: "案例已成功发布",
+      // 更新本地store中的数据
+      updateUserCase(id, {
+        title: data.title,
+        description: data.description,
+        image_url: imageUrlToUse,
+        status: 'published',
+        tags: tags,
       });
 
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("发布案例失败:", error);
       toast({
-        title: "发布失败",
-        description: "无法发布案例，请稍后再试",
-        variant: "destructive",
+        title: '发布成功',
+        description: '案例已成功发布',
+      });
+
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('发布案例失败:', error);
+      toast({
+        title: '发布失败',
+        description: '无法发布案例，请稍后再试',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -466,6 +542,39 @@ const CreateCase = () => {
   };
 
   if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">加载案例数据中...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!caseData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">案例不存在</h1>
+            <p className="text-muted-foreground">该案例可能已被删除或不存在</p>
+            <Button onClick={() => router.push('/dashboard')} className="mt-4">
+              返回控制台
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -477,16 +586,16 @@ const CreateCase = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => router.push('/dashboard')}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               返回
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">创建新案例</h1>
+              <h1 className="text-3xl font-bold text-foreground">编辑案例</h1>
               <p className="text-muted-foreground">
-                分享您的创意设计和代码实现
+                修改您的创意设计和代码实现
               </p>
             </div>
           </div>
@@ -498,7 +607,7 @@ const CreateCase = () => {
             <Card>
               <CardHeader>
                 <CardTitle>基本信息</CardTitle>
-                <CardDescription>填写案例的基本信息</CardDescription>
+                <CardDescription>修改案例的基本信息</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormField
@@ -547,14 +656,24 @@ const CreateCase = () => {
                       <FormLabel>封面图片 *</FormLabel>
                       <FormControl>
                         <div className="space-y-4">
+                          {/* 隐藏的文件输入 */}
+                          <input
+                            id="cover-image-input"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileChange}
+                            className="hidden"
+                            disabled={uploadingImage || !bucketReady}
+                          />
+                          
                           {/* 已上传图片预览或上传区域 */}
-                          {localPreviewUrl ? (
-                                                          <div className="relative inline-block">
-                                <img
-                                  src={localPreviewUrl}
-                                  alt="封面预览"
-                                  className="w-full max-w-sm h-auto rounded-md border border-gray-200"
-                                />
+                          {localPreviewUrl || originalImageUrl ? (
+                            <div className="relative inline-block">
+                              <img
+                                src={localPreviewUrl || originalImageUrl}
+                                alt="封面预览"
+                                className="w-full max-w-sm h-auto rounded-md border border-gray-200"
+                              />
                               <div className="absolute top-2 right-2 flex gap-2">
                                 <Button
                                   type="button"
@@ -563,7 +682,7 @@ const CreateCase = () => {
                                   onClick={() => {
                                     // 触发文件选择
                                     const input = document.getElementById(
-                                      "cover-image-input"
+                                      'cover-image-input'
                                     ) as HTMLInputElement;
                                     if (input) {
                                       input.click();
@@ -597,17 +716,17 @@ const CreateCase = () => {
                             <div
                               className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
                                 dragOver
-                                  ? "border-blue-400 bg-blue-50"
-                                  : "border-gray-300 hover:border-gray-400"
+                                  ? 'border-blue-400 bg-blue-50'
+                                  : 'border-gray-300 hover:border-gray-400'
                               } ${
                                 uploadingImage
-                                  ? "opacity-50 cursor-not-allowed"
-                                  : ""
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : ''
                               }`}
                               onClick={() => {
                                 if (!uploadingImage && bucketReady) {
                                   const input = document.getElementById(
-                                    "cover-image-input"
+                                    'cover-image-input'
                                   ) as HTMLInputElement;
                                   if (input) {
                                     input.click();
@@ -626,48 +745,27 @@ const CreateCase = () => {
                               ) : (
                                 <div
                                   className={`${
-                                    dragOver ? "text-blue-600" : "text-gray-500"
+                                    dragOver ? 'text-blue-600' : 'text-gray-500'
                                   }`}
                                 >
                                   <Upload className="h-8 w-8 mx-auto mb-2" />
                                   <p className="text-sm">
                                     {dragOver
-                                      ? "释放鼠标上传图片"
-                                      : "点击选择图片或拖拽图片到此处"}
+                                      ? '释放鼠标上传图片'
+                                      : '点击或拖拽图片到此处上传'}
                                   </p>
                                   <p className="text-xs text-gray-400 mt-1">
-                                    支持 JPG、PNG、GIF 格式，单张图片
+                                    支持 JPG、PNG、GIF 格式，建议尺寸 800x600
                                   </p>
                                 </div>
                               )}
                             </div>
                           )}
-
-                          {/* 隐藏的文件输入 */}
-                          <Input
-                            id="cover-image-input"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageFileChange}
-                            disabled={uploadingImage || !bucketReady}
-                            className="hidden"
-                          />
-
-                          {/* 存储桶状态提示 */}
-                          {!bucketReady && (
-                            <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md text-sm">
-                              存储桶不存在，请先在 Supabase 控制台创建 images
-                              存储桶
-                            </div>
-                          )}
                         </div>
                       </FormControl>
                       <FormDescription>
-                        建议使用高质量的设计截图作为封面，选择图片后会自动上传
+                        建议使用高质量的设计截图作为封面
                       </FormDescription>
-                      {!localPreviewUrl && (
-                        <p className="text-sm text-red-500">请上传封面图片</p>
-                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -682,7 +780,7 @@ const CreateCase = () => {
                         <FormLabel>分类 *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -729,7 +827,7 @@ const CreateCase = () => {
             <Card>
               <CardHeader>
                 <CardTitle>内容详情</CardTitle>
-                <CardDescription>添加设计思路和提示词</CardDescription>
+                <CardDescription>修改设计思路和提示词</CardDescription>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -757,13 +855,13 @@ const CreateCase = () => {
 
             {/* 代码编辑器卡片 */}
             <CodeEditorTabs
-              html={form.watch("html_content")}
-              css={form.watch("css_content") || ""}
-              javascript={form.watch("javascript_content") || ""}
-              onHtmlChange={(value) => form.setValue("html_content", value)}
-              onCssChange={(value) => form.setValue("css_content", value)}
+              html={form.watch('html_content')}
+              css={form.watch('css_content') || ''}
+              javascript={form.watch('javascript_content') || ''}
+              onHtmlChange={(value) => form.setValue('html_content', value)}
+              onCssChange={(value) => form.setValue('css_content', value)}
               onJavascriptChange={(value) =>
-                form.setValue("javascript_content", value)
+                form.setValue('javascript_content', value)
               }
               showPreview={true}
             />
@@ -773,7 +871,7 @@ const CreateCase = () => {
               <CardHeader>
                 <CardTitle>标签</CardTitle>
                 <CardDescription>
-                  添加相关标签，便于其他用户发现
+                  修改相关标签，便于其他用户发现
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -783,7 +881,7 @@ const CreateCase = () => {
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => {
-                      if (e.key === "Enter") {
+                      if (e.key === 'Enter') {
                         e.preventDefault();
                         addTag();
                       }
@@ -841,7 +939,7 @@ const CreateCase = () => {
                 className="flex items-center gap-2"
               >
                 <Send className="h-4 w-4" />
-                立即发布
+                {caseData.status === 'published' ? '更新发布' : '立即发布'}
               </Button>
             </div>
           </form>
@@ -849,6 +947,4 @@ const CreateCase = () => {
       </main>
     </div>
   );
-};
-
-export default CreateCase;
+}

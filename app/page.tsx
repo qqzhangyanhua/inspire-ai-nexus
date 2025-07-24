@@ -1,12 +1,13 @@
+'use client';
 
-import Header from "@/components/Header";
-import FilterPills from "@/components/FilterPills";
-import InspirationGrid from "@/components/InspirationGrid";
-import { useState } from "react";
+import Header from '@/components/Header';
+import FilterPills from '@/components/FilterPills';
+import InspirationGrid from '@/components/InspirationGrid';
+import { useState } from 'react';
 
-const Index = () => {
-  const [selectedFilter, setSelectedFilter] = useState("全部");
-  const [searchQuery, setSearchQuery] = useState("");
+export default function HomePage() {
+  const [selectedFilter, setSelectedFilter] = useState('全部');
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,6 +26,4 @@ const Index = () => {
       </main>
     </div>
   );
-};
-
-export default Index;
+}
