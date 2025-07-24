@@ -1,7 +1,8 @@
+"use client"
+
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 interface FilterPillsProps {
   selectedFilter: string;
@@ -17,14 +18,13 @@ const FilterPills = ({ selectedFilter, onFilterChange }: FilterPillsProps) => {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('name_zh')
-        .order('created_at');
+      // 使用 Next.js API routes 而不是直接调用 Supabase
+      const response = await fetch('/api/categories');
+      const data = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch categories');
 
-      const categoryNames = data?.map(cat => cat.name_zh) || [];
+      const categoryNames = data?.map((cat: any) => cat.name_zh) || [];
       setCategories(['全部', ...categoryNames]);
     } catch (error) {
       console.error('Error fetching categories:', error);

@@ -1,5 +1,7 @@
+"use client"
+
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -73,7 +75,7 @@ const CreateCase = () => {
   const { user } = useAuth();
   const { addUserCase } = useUserStore();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -123,7 +125,7 @@ const CreateCase = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      router.push("/auth");
       return;
     }
     fetchCategories();
@@ -216,7 +218,7 @@ const CreateCase = () => {
         description: "您可以在个人中心继续编辑",
       });
 
-      navigate("/dashboard");
+      router.push("/dashboard");
     } catch (error) {
       console.error("保存草稿失败:", error);
       toast({
@@ -278,7 +280,7 @@ const CreateCase = () => {
         description: "案例已成功发布",
       });
 
-      navigate("/dashboard");
+      router.push("/dashboard");
     } catch (error) {
       console.error("发布案例失败:", error);
       toast({
@@ -303,7 +305,7 @@ const CreateCase = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => router.push("/dashboard")}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />

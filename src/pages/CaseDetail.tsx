@@ -1,5 +1,8 @@
 
-import { useParams, useNavigate } from "react-router-dom";
+"use client"
+
+import { useParams } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserStore } from "@/stores/useUserStore";
@@ -13,11 +16,11 @@ import { Loader2 } from "lucide-react";
 interface CaseData {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   image_url: string;
-  author_id: string;
+  author_id: string | null;
   prompt: string;
-  html_content: string;
+  html_content: string | null;
   css_content: string | null;
   javascript_content: string | null;
   code_content: string | null; // 保持兼容性，旧数据可能还有这个字段
@@ -25,7 +28,7 @@ interface CaseData {
   tags: string[];
   view_count: number;
   like_count: number;
-  status: string;
+  status: string | null;
   created_at: string;
   updated_at: string;
   // 作者信息
@@ -38,7 +41,7 @@ interface CaseData {
 
 const CaseDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useRouter();
   const { toast } = useToast();
   const { user, favoriteIds, addToFavorites, removeFromFavorites } = useUserStore();
   
@@ -87,7 +90,7 @@ const CaseDetail = () => {
           description: "该案例可能已被删除或不存在",
           variant: "destructive",
         });
-        navigate('/');
+        router.push('/');
         return;
       }
 
@@ -98,7 +101,7 @@ const CaseDetail = () => {
           description: "该案例尚未发布或您没有访问权限",
           variant: "destructive",
         });
-        navigate('/');
+        router.push('/');
         return;
       }
 

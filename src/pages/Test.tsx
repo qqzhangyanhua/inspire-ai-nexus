@@ -124,12 +124,12 @@ const Test = () => {
       // 根据文档正确配置 S3 Session Token
       const s3 = new S3Client({
         forcePathStyle: true,
-        region: import.meta.env.VITE_S3_REGION || 'us-east-1',
-        endpoint: import.meta.env.VITE_S3_ENDPOINT,
+        region: process.env.NEXT_PUBLIC_S3_REGION || 'us-east-1',
+        endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
         credentials: {
           // Session Token 方式：accessKeyId = project_ref，secretAccessKey = anon_key
-          accessKeyId: import.meta.env.VITE_SUPABASE_URL.split('//')[1].split('.')[0], // 提取 project_ref
-          secretAccessKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          accessKeyId: process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1].split('.')[0] || '', // 提取 project_ref
+          secretAccessKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
           sessionToken: session.access_token,
         },
       });
@@ -146,7 +146,7 @@ const Test = () => {
       await s3.send(putCommand);
 
       // 获取 public url
-      const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/images/${filePath}`;
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${filePath}`;
       setUploadedUrl(publicUrl);
 
       toast({

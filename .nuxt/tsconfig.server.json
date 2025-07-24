@@ -1,0 +1,147 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "allowSyntheticDefaultImports": true,
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "paths": {
+      "#imports": [
+        "./types/nitro-imports"
+      ],
+      "~/*": [
+        "../*"
+      ],
+      "@/*": [
+        "../*"
+      ],
+      "~~/*": [
+        "../*"
+      ],
+      "@@/*": [
+        "../*"
+      ],
+      "nitropack/types": [
+        "../node_modules/.pnpm/nitropack@2.12.4/node_modules/nitropack/types"
+      ],
+      "nitropack/runtime": [
+        "../node_modules/.pnpm/nitropack@2.12.4/node_modules/nitropack/runtime"
+      ],
+      "nitropack": [
+        "../node_modules/.pnpm/nitropack@2.12.4/node_modules/nitropack"
+      ],
+      "defu": [
+        "../node_modules/.pnpm/defu@6.1.4/node_modules/defu"
+      ],
+      "h3": [
+        "../node_modules/.pnpm/h3@1.15.3/node_modules/h3"
+      ],
+      "consola": [
+        "../node_modules/.pnpm/consola@3.4.2/node_modules/consola"
+      ],
+      "ofetch": [
+        "../node_modules/.pnpm/ofetch@1.4.1/node_modules/ofetch"
+      ],
+      "@unhead/vue": [
+        "../node_modules/.pnpm/@unhead+vue@2.0.12_vue@3.5.18/node_modules/@unhead/vue"
+      ],
+      "@vue/runtime-core": [
+        "../node_modules/.pnpm/@vue+runtime-core@3.5.18/node_modules/@vue/runtime-core"
+      ],
+      "@vue/compiler-sfc": [
+        "../node_modules/.pnpm/@vue+compiler-sfc@3.5.18/node_modules/@vue/compiler-sfc"
+      ],
+      "unplugin-vue-router/client": [
+        "../node_modules/.pnpm/unplugin-vue-router@0.14.0_@vue+compiler-sfc@3.5.18_vue-router@4.5.1_vue@3.5.18/node_modules/unplugin-vue-router/client"
+      ],
+      "@nuxt/schema": [
+        "../node_modules/.pnpm/@nuxt+schema@3.17.7/node_modules/@nuxt/schema"
+      ],
+      "nuxt": [
+        "../node_modules/.pnpm/nuxt@3.17.7_@types+node@20.19.9_@vue+compiler-sfc@3.5.18_eslint@8.57.1_typescript@5.8.3_vite@7.0.6/node_modules/nuxt"
+      ],
+      "vite/client": [
+        "../node_modules/.pnpm/vite@7.0.6_@types+node@20.19.9/node_modules/vite/client"
+      ],
+      "#shared": [
+        "../shared"
+      ],
+      "assets": [
+        "../assets"
+      ],
+      "assets/*": [
+        "../assets/*"
+      ],
+      "public": [
+        "../public"
+      ],
+      "public/*": [
+        "../public/*"
+      ],
+      "#build": [
+        "./"
+      ],
+      "#internal/nuxt/paths": [
+        "../node_modules/.pnpm/nuxt@3.17.7_@types+node@20.19.9_@vue+compiler-sfc@3.5.18_eslint@8.57.1_typescript@5.8.3_vite@7.0.6/node_modules/nuxt/dist/core/runtime/nitro/utils/paths"
+      ],
+      "pinia": [
+        "../node_modules/.pnpm/pinia@2.3.1_typescript@5.8.3_vue@3.5.18/node_modules/pinia/dist/pinia"
+      ],
+      "#color-mode-options": [
+        "./color-mode-options.mjs"
+      ],
+      "#unhead/composables": [
+        "../node_modules/.pnpm/nuxt@3.17.7_@types+node@20.19.9_@vue+compiler-sfc@3.5.18_eslint@8.57.1_typescript@5.8.3_vite@7.0.6/node_modules/nuxt/dist/head/runtime/composables/v3"
+      ],
+      "#supabase/server": [
+        "../node_modules/.pnpm/@nuxtjs+supabase@1.6.0/node_modules/@nuxtjs/supabase/dist/runtime/server/services"
+      ],
+      "#supabase/server/*": [
+        "../node_modules/.pnpm/@nuxtjs+supabase@1.6.0/node_modules/@nuxtjs/supabase/dist/runtime/server/services/*"
+      ],
+      "#supabase/database": [
+        "./types/supabase-database"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "webworker",
+      "dom.iterable"
+    ]
+  },
+  "include": [
+    "./types/nitro-nuxt.d.ts",
+    "../node_modules/.pnpm/@nuxtjs+tailwindcss@6.14.0/node_modules/@nuxtjs/tailwindcss/runtime/server",
+    "../node_modules/.pnpm/@nuxtjs+supabase@1.6.0/node_modules/@nuxtjs/supabase/runtime/server",
+    "../node_modules/.pnpm/@pinia+nuxt@0.5.5_typescript@5.8.3_vue@3.5.18/node_modules/@pinia/nuxt/runtime/server",
+    "../node_modules/.pnpm/@vueuse+nuxt@10.11.1_nuxt@3.17.7_vue@3.5.18/node_modules/@vueuse/nuxt/runtime/server",
+    "../node_modules/.pnpm/shadcn-nuxt@0.10.4/node_modules/shadcn-nuxt/runtime/server",
+    "../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2/node_modules/@nuxtjs/color-mode/runtime/server",
+    "../node_modules/.pnpm/@nuxt+devtools@2.6.2_vite@7.0.6_vue@3.5.18/node_modules/@nuxt/devtools/runtime/server",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.6.6/node_modules/@nuxt/telemetry/runtime/server",
+    "./types/nitro.d.ts",
+    "../**/*",
+    "../server/**/*"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../node_modules/.pnpm/nuxt@3.17.7_@types+node@20.19.9_@vue+compiler-sfc@3.5.18_eslint@8.57.1_typescript@5.8.3_vite@7.0.6/node_modules/nuxt/node_modules",
+    "../node_modules/.pnpm/@nuxtjs+tailwindcss@6.14.0/node_modules/@nuxtjs/tailwindcss/node_modules",
+    "../node_modules/.pnpm/@nuxtjs+supabase@1.6.0/node_modules/@nuxtjs/supabase/node_modules",
+    "../node_modules/.pnpm/@pinia+nuxt@0.5.5_typescript@5.8.3_vue@3.5.18/node_modules/@pinia/nuxt/node_modules",
+    "../node_modules/.pnpm/@vueuse+nuxt@10.11.1_nuxt@3.17.7_vue@3.5.18/node_modules/@vueuse/nuxt/node_modules",
+    "../node_modules/.pnpm/shadcn-nuxt@0.10.4/node_modules/shadcn-nuxt/node_modules",
+    "../node_modules/.pnpm/@nuxtjs+color-mode@3.5.2/node_modules/@nuxtjs/color-mode/node_modules",
+    "../node_modules/.pnpm/@nuxt+devtools@2.6.2_vite@7.0.6_vue@3.5.18/node_modules/@nuxt/devtools/node_modules",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.6.6/node_modules/@nuxt/telemetry/node_modules",
+    "../dist"
+  ]
+}

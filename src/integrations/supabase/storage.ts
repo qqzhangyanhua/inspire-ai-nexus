@@ -54,7 +54,7 @@ const checkBucketDirectly = async (bucketName: string): Promise<boolean> => {
     console.log(`直接检查存储桶 ${bucketName} 是否可用...`);
     
     // 尝试列出存储桶中的文件，如果能访问说明存储桶存在且有权限
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucketName)
       .list('', { limit: 1 });
     
@@ -149,7 +149,10 @@ export const deleteFile = async (
       .from(bucketName)
       .remove([filePath]);
 
-    if (error) throw error;
+    if (error) {
+      console.error('删除文件失败:', error);
+      return false;
+    }
 
     return true;
   } catch (error) {

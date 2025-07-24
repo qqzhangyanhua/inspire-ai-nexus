@@ -1,8 +1,10 @@
+"use client"
+
 
 import { Search, User, LogOut, Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -23,7 +25,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Left - Logo */}
-        <Link to="/" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">I</span>
           </div>
@@ -32,11 +34,11 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
 
         {/* Center - Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-foreground hover:text-primary transition-colors">
+          <Link href="/" className="text-foreground hover:text-primary transition-colors">
             探索
           </Link>
           {user && (
-            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+            <Link href="/dashboard" className="text-foreground hover:text-primary transition-colors">
               工作台
             </Link>
           )}
@@ -80,7 +82,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
                   {user.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <Link to="/dashboard">
+                <Link href="/dashboard">
                   <DropdownMenuItem>
                     <BarChart3 className="w-4 h-4 mr-2" />
                     工作台
@@ -94,7 +96,7 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth">
+            <Link href="/auth">
               <Button variant="outline" size="sm">
                 登录
               </Button>

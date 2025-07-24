@@ -1,7 +1,8 @@
+"use client"
+
 
 import { useEffect, useState } from "react";
 import InspirationCard from "./InspirationCard";
-import { supabase } from "@/integrations/supabase/client";
 import { useUserStore } from "@/stores/useUserStore";
 
 interface InspirationGridProps {
@@ -33,19 +34,13 @@ const InspirationGrid = ({ selectedFilter, searchQuery }: InspirationGridProps) 
 
   const fetchCases = async () => {
     try {
-      const { data, error } = await supabase
-        .from('cases')
-        .select(`
-          id,
-          title,
-          image_url,
-          category:categories(name_zh)
-        `)
-        .eq('status', 'published');
+      // 使用 Next.js API routes 而不是直接调用 Supabase
+      const response = await fetch('/api/cases');
+      const data = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch cases');
 
-      const casesWithFavorites = data?.map(item => ({
+      const casesWithFavorites = data?.map((item: any) => ({
         id: item.id,
         title: item.title,
         image_url: item.image_url,

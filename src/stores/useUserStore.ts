@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { usersAPI, casesAPI, favoritesAPI } from '@/lib/api';
 
 // 用户档案接口
 interface UserProfile {
@@ -199,16 +200,13 @@ export const useUserStore = create<UserStore>()(
         if (!user) return;
 
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('user_id', user.id)
-            .select()
-            .single();
-
-          if (error) throw error;
+          const response = await usersAPI.updateProfile(user.id, updates);
           
-          set({ profile: data });
+          if (response.error) {
+            throw new Error(response.error);
+          }
+          
+          set({ profile: response.profile });
         } catch (error) {
           console.error('更新用户资料失败:', error);
           throw error;
@@ -222,17 +220,14 @@ export const useUserStore = create<UserStore>()(
         try {
           set({ profileLoading: true });
           
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-
-          if (error && error.code !== 'PGRST116') { // 忽略未找到的错误
-            throw error;
+          const response = await usersAPI.getProfile(user.id);
+          
+          if (response.error) {
+            console.error('获取用户资料失败:', response.error);
+            return;
           }
           
-          set({ profile: data || null });
+          set({ profile: response.profile });
         } catch (error) {
           console.error('获取用户资料失败:', error);
         } finally {
@@ -250,112 +245,44 @@ export const useUserStore = create<UserStore>()(
         try {
           set({ statsLoading: true });
           
-          // 获取用户案例基本信息
-          const { data: cases, error: casesError } = await supabase
-            .from('cases')
-            .select('id, view_count')
-            .eq('author_id', user.id);
-
-          if (casesError) throw casesError;
-
-          // 计算基本统计数据
-          const totalCases = cases?.length || 0;
-          const totalViews = cases?.reduce((sum, case_) => sum + (case_.view_count || 0), 0) || 0;
-
-          // 获取真实的点赞数量 (从user_favorites表统计)
-          let totalLikes = 0;
-          if (cases && cases.length > 0) {
-            const caseIds = cases.map((c: any) => c.id);
-            const { data: likes, error: likesError } = await supabase
-              .from('user_favorites')
-              .select('case_id')
-              .in('case_id', caseIds);
-
-            if (likesError && likesError.code !== 'PGRST116') {
-              throw likesError;
-            }
-            
-            totalLikes = likes?.length || 0;
+          const response = await usersAPI.getStats(user.id);
+          
+          if (response.error) {
+            console.error('获取统计数据失败:', response.error);
+            return;
           }
-
-          // 获取评论数量 (只有当有案例时才查询)
-          let totalComments = 0;
-          if (cases && cases.length > 0) {
-            const caseIds = cases.map((c: any) => c.id);
-            const { data: comments, error: commentsError } = await supabase
-              .from('case_comments')
-              .select('id')
-              .in('case_id', caseIds);
-
-            if (commentsError && commentsError.code !== 'PGRST116') {
-              throw commentsError;
-            }
-            
-            totalComments = comments?.length || 0;
-          }
-
-          // 获取收藏数量
-          const { data: favorites, error: favoritesError } = await supabase
-            .from('user_favorites')
-            .select('id')
-            .eq('user_id', user.id);
-
-          if (favoritesError && favoritesError.code !== 'PGRST116') {
-            throw favoritesError;
-          }
-
-          const stats: UserStats = {
-            totalCases,
-            totalViews,
-            totalLikes,
-            totalComments,
-            totalFavorites: favorites?.length || 0,
-          };
-
-          set({ stats });
+          
+          set({ stats: response.stats });
         } catch (error) {
-          console.error('获取用户统计失败:', error);
+          console.error('获取统计数据失败:', error);
         } finally {
           set({ statsLoading: false });
         }
       },
 
       // 案例管理动作
-      setUserCases: (cases) => {
-        const publishedCases = cases.filter(c => c.status === 'published');
-        const draftCases = cases.filter(c => c.status === 'draft');
-        set({ 
-          userCases: publishedCases,
-          draftCases: draftCases
+      setUserCases: (cases) => set({ userCases: cases }),
+
+      setDraftCases: (cases: UserCase[]) => set({ draftCases: cases }),
+
+      addUserCase: (newCase) => {
+        const { userCases } = get();
+        set({ userCases: [newCase, ...userCases] });
+      },
+
+      updateUserCase: (id: string, updates: Partial<UserCase>) => {
+        const { userCases, draftCases } = get();
+        set({
+          userCases: userCases.map(c => c.id === id ? { ...c, ...updates } : c),
+          draftCases: draftCases.map(c => c.id === id ? { ...c, ...updates } : c),
         });
       },
 
-      addUserCase: (case_) => {
-        const { userCases, draftCases } = get();
-        if (case_.status === 'published') {
-          set({ userCases: [...userCases, case_] });
-        } else if (case_.status === 'draft') {
-          set({ draftCases: [...draftCases, case_] });
-        }
-      },
-
-      updateUserCase: (id, updates) => {
-        const { userCases, draftCases } = get();
-        
-        const updateCase = (cases: UserCase[]) =>
-          cases.map(case_ => case_.id === id ? { ...case_, ...updates } : case_);
-        
-        set({
-          userCases: updateCase(userCases),
-          draftCases: updateCase(draftCases)
-        });
-      },
-
-      removeUserCase: (id) => {
+      removeUserCase: (caseId) => {
         const { userCases, draftCases } = get();
         set({
-          userCases: userCases.filter(c => c.id !== id),
-          draftCases: draftCases.filter(c => c.id !== id)
+          userCases: userCases.filter(c => c.id !== caseId),
+          draftCases: draftCases.filter(c => c.id !== caseId),
         });
       },
 
@@ -366,15 +293,21 @@ export const useUserStore = create<UserStore>()(
         try {
           set({ casesLoading: true });
           
-          const { data: cases, error } = await supabase
-            .from('cases')
-            .select('*')
-            .eq('author_id', user.id)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
+          const response = await casesAPI.getCases({ authorId: user.id });
           
-          get().setUserCases(cases || []);
+          if (response.error) {
+            console.error('获取用户案例失败:', response.error);
+            return;
+          }
+          
+          const cases = response.cases || [];
+          const publishedCases = cases.filter((c: any) => c.status === 'published');
+          const draftCases = cases.filter((c: any) => c.status === 'draft');
+          
+          set({ 
+            userCases: publishedCases,
+            draftCases: draftCases,
+          });
         } catch (error) {
           console.error('获取用户案例失败:', error);
         } finally {
@@ -394,13 +327,13 @@ export const useUserStore = create<UserStore>()(
         if (favoriteIds.includes(caseId)) return;
 
         try {
-          const { data, error } = await supabase.rpc('toggle_case_favorite', {
-            case_id: caseId
-          });
+          const response = await favoritesAPI.toggleFavorite(caseId);
 
-          if (error) throw error;
+          if (response.error) {
+            throw new Error(response.error);
+          }
 
-          // 只有当数据库操作成功时才更新本地状态
+          // 只有当API操作成功时才更新本地状态
           set({ favoriteIds: [...favoriteIds, caseId] });
         } catch (error) {
           console.error('添加收藏失败:', error);
@@ -409,22 +342,25 @@ export const useUserStore = create<UserStore>()(
       },
 
       removeFromFavorites: async (caseId) => {
-        const { user, favoriteIds } = get();
+        const { user, favoriteIds, favoriteCases } = get();
         if (!user) throw new Error('用户未登录');
         
         if (!favoriteIds.includes(caseId)) return;
 
         try {
-          const { data, error } = await supabase.rpc('toggle_case_favorite', {
-            case_id: caseId
+          const response = await favoritesAPI.toggleFavorite(caseId);
+
+          if (response.error) {
+            throw new Error(response.error);
+          }
+
+          // 更新本地状态
+          set({ 
+            favoriteIds: favoriteIds.filter(id => id !== caseId),
+            favoriteCases: favoriteCases.filter(c => c.id !== caseId),
           });
-
-          if (error) throw error;
-
-          // 只有当数据库操作成功时才更新本地状态
-          set({ favoriteIds: favoriteIds.filter(id => id !== caseId) });
         } catch (error) {
-          console.error('取消收藏失败:', error);
+          console.error('移除收藏失败:', error);
           throw error;
         }
       },
@@ -434,46 +370,34 @@ export const useUserStore = create<UserStore>()(
         if (!user) return;
 
         try {
-          const { data, error } = await supabase
-            .from('user_favorites')
-            .select('case_id')
-            .eq('user_id', user.id);
-
-          if (error && error.code !== 'PGRST116') {
-            throw error;
+          const response = await favoritesAPI.getFavorites(user.id);
+          
+          if (response.error) {
+            console.error('获取收藏列表失败:', response.error);
+            return;
           }
           
-          const favoriteIds = data?.map(f => f.case_id) || [];
-          set({ favoriteIds });
-          
-          // 获取收藏案例详情
-          get().fetchFavoriteCases();
+          set({ favoriteIds: response.favoriteIds || [] });
         } catch (error) {
           console.error('获取收藏列表失败:', error);
         }
       },
 
       fetchFavoriteCases: async () => {
-        const { user, favoriteIds } = get();
-        if (!user || favoriteIds.length === 0) {
-          set({ favoriteCases: [] });
-          return;
-        }
+        const { user } = get();
+        if (!user) return;
 
         try {
-          const { data: cases, error } = await supabase
-            .from('cases')
-            .select('*')
-            .in('id', favoriteIds)
-            .eq('status', 'published')
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
+          const response = await favoritesAPI.getFavorites(user.id, true);
           
-          set({ favoriteCases: cases || [] });
+          if (response.error) {
+            console.error('获取收藏案例失败:', response.error);
+            return;
+          }
+          
+          set({ favoriteCases: response.favoriteCases || [] });
         } catch (error) {
-          console.error('获取收藏案例详情失败:', error);
-          set({ favoriteCases: [] });
+          console.error('获取收藏案例失败:', error);
         }
       },
 

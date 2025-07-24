@@ -1,7 +1,9 @@
+"use client"
+
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,7 +56,7 @@ const InspirationCard = ({ id, title, imageUrl, category, isFavorited }: Inspira
   };
 
   return (
-    <Link to={`/case/${id}`}>
+    <Link href={`/case/${id}`}>
       <Card className="group overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl border-border bg-card animate-fade-in">
         {/* Image Container */}
         <div className="relative overflow-hidden">

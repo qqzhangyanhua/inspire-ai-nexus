@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserStore } from "@/stores/useUserStore";
@@ -10,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Heart, MessageSquare, Plus, Edit, Trash2, Calendar, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Dashboard = () => {
@@ -28,12 +30,13 @@ const Dashboard = () => {
     fetchStats 
   } = useUserStore();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const router = useRouter();
+  const navigate = router.push;
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      router.push('/auth');
     }
   }, [user, navigate]);
 
@@ -111,7 +114,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground">管理您的创意案例和数据</p>
             </div>
           </div>
-          <Button onClick={() => navigate('/contribute')} className="flex items-center gap-2">
+          <Button onClick={() => router.push('/contribute')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             创建新案例
           </Button>
@@ -183,7 +186,7 @@ const Dashboard = () => {
                 {userCases.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground mb-4">您还没有发布任何案例</p>
-                    <Button onClick={() => navigate('/contribute')}>
+                    <Button onClick={() => router.push('/contribute')}>
                       创建第一个案例
                     </Button>
                   </div>
@@ -239,14 +242,14 @@ const Dashboard = () => {
                                 size="sm" 
                                 variant="outline" 
                                 className="flex-1"
-                                onClick={() => navigate(`/case/${case_.id}`)}
+                                onClick={() => router.push(`/case/${case_.id}`)}
                               >
                                 查看
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => navigate(`/edit/${case_.id}`)}
+                                onClick={() => router.push(`/edit/${case_.id}`)}
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -314,7 +317,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <Button size="sm" onClick={() => navigate(`/edit/${case_.id}`)}>
+                            <Button size="sm" onClick={() => router.push(`/edit/${case_.id}`)}>
                               继续编辑
                             </Button>
                             <AlertDialog>
@@ -361,7 +364,7 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favoriteCases.map((case_) => (
-                        <Card key={case_.id} className="group cursor-pointer" onClick={() => navigate(`/case/${case_.id}`)}>
+                        <Card key={case_.id} className="group cursor-pointer" onClick={() => router.push(`/case/${case_.id}`)}>
                           <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
                             <img 
                               src={case_.image_url} 

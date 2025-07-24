@@ -1,5 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -43,7 +46,7 @@ interface Category {
 interface CaseData {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   image_url: string;
   category_id: string;
   prompt: string;
@@ -52,7 +55,7 @@ interface CaseData {
   javascript_content: string | null;
   preview_url: string | null;
   tags: string[];
-  status: string;
+  status: string | null;
   author_id: string;
   created_at: string;
   updated_at: string;
@@ -63,7 +66,7 @@ const EditCase = () => {
   const { user } = useAuth();
   const { updateUserCase } = useUserStore();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -90,12 +93,12 @@ const EditCase = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      router.push('/auth');
       return;
     }
     
     if (!id) {
-      navigate('/dashboard');
+      router.push('/dashboard');
       return;
     }
 
@@ -123,7 +126,7 @@ const EditCase = () => {
           description: "无法获取案例数据，请稍后再试",
           variant: "destructive",
         });
-        navigate('/dashboard');
+        router.push('/dashboard');
         return;
       }
 
@@ -133,7 +136,7 @@ const EditCase = () => {
           description: "该案例可能已被删除或不存在",
           variant: "destructive",
         });
-        navigate('/dashboard');
+        router.push('/dashboard');
         return;
       }
 
@@ -144,7 +147,7 @@ const EditCase = () => {
           description: "您只能编辑自己创建的案例",
           variant: "destructive",
         });
-        navigate('/dashboard');
+        router.push('/dashboard');
         return;
       }
 
@@ -175,7 +178,7 @@ const EditCase = () => {
         description: "网络错误，请检查网络连接",
         variant: "destructive",
       });
-      navigate('/dashboard');
+      router.push('/dashboard');
     } finally {
       setIsLoading(false);
     }
@@ -261,7 +264,7 @@ const EditCase = () => {
         description: "案例已保存为草稿",
       });
 
-      navigate('/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       console.error('保存草稿失败:', error);
       toast({
@@ -316,7 +319,7 @@ const EditCase = () => {
         description: "案例已成功发布",
       });
 
-      navigate('/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       console.error('发布案例失败:', error);
       toast({
@@ -355,7 +358,7 @@ const EditCase = () => {
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">案例不存在</h1>
             <p className="text-muted-foreground">该案例可能已被删除或不存在</p>
-            <Button onClick={() => navigate('/dashboard')} className="mt-4">
+            <Button onClick={() => router.push('/dashboard')} className="mt-4">
               返回控制台
             </Button>
           </div>
@@ -374,7 +377,7 @@ const EditCase = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => router.push('/dashboard')}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />

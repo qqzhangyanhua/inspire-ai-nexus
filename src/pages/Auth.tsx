@@ -1,18 +1,14 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+"use client"
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { toast } from "sonner";
-import { User } from "@supabase/supabase-js";
+
+import { useRouter } from "next/navigation";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,21 +17,26 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const navigate = useNavigate();
+  const router = useRouter();
+  const navigate = router.push;
 
   useEffect(() => {
     // 检查是否已登录
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        navigate("/");
+      try {
+        const response = await fetch('/api/auth/session');
+        const data = await response.json();
+        
+        if (response.ok && data.session?.user) {
+          router.push("/");
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
       }
     };
 
     checkUser();
-  }, [navigate]);
+  }, [router]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,19 +45,20 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username,
-            display_name: displayName,
-          },
-        },
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          redirectUrl,
+          username,
+          display_name: displayName,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
 
       toast.success("注册成功！请检查邮箱并确认账户。");
     } catch (error: any) {
@@ -75,16 +77,19 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Login failed');
 
       if (data.user) {
         toast.success("登录成功！");
-        navigate("/");
+        router.push("/");
       }
     } catch (error: any) {
       if (error.message.includes("Invalid login credentials")) {
@@ -184,7 +189,7 @@ export default function Auth() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={() => router.push("/")}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               返回首页
