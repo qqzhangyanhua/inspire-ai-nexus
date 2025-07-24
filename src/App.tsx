@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateCase from "./pages/CreateCase";
 import EditCase from "./pages/EditCase";
 import NotFound from "./pages/NotFound";
+import Test from "./pages/Test";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/contribute" element={<CreateCase />} />
             <Route path="/edit/:id" element={<EditCase />} />
+            <Route path="/test" element={<Test />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
