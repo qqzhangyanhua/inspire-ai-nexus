@@ -26,7 +26,7 @@ interface UserStats {
 }
 
 // 用户案例接口
-interface UserCase {
+export interface UserCase {
   id: string;
   title: string;
   description: string;

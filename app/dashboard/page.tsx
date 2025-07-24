@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserStore } from '@/stores/useUserStore';
+import { useUserStore, UserCase } from '@/stores/useUserStore';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Heart, MessageSquare, Plus, Edit, Trash2, Calendar, TrendingUp, BarChart3, PieChart, Users, Clock, FileText, Bookmark } from 'lucide-react';
+import { Eye, Heart, MessageSquare, Plus, Edit, Trash2, Calendar, TrendingUp, BarChart3, PieChart, Users, Clock, FileText, Bookmark, CheckCircle, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -33,12 +33,102 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingCases, setPendingCases] = useState<(UserCase & { profiles?: { display_name?: string; username?: string } })[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
       router.push('/auth');
+    } else if (profile?.role === 'Admin') {
+      fetchPendingCases();
     }
-  }, [user, router]);
+  }, [user, router, profile?.role]);
+
+  // 获取待审批案例
+  const fetchPendingCases = async () => {
+    if (profile?.role !== 'Admin') return;
+    
+    try {
+      setPendingLoading(true);
+      const { data: cases, error } = await supabase
+        .from('cases')
+        .select(`
+          *,
+          profiles!cases_author_id_fkey(
+            display_name,
+            username
+          )
+        `)
+        .eq('status', 'approval')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPendingCases(cases || []);
+    } catch (error) {
+      console.error('获取待审批案例失败:', error);
+      toast({
+        title: '获取待审批案例失败',
+        description: '请稍后再试',
+        variant: 'destructive',
+      });
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  // 审批通过
+  const handleApproveCase = async (caseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('cases')
+        .update({ status: 'published' })
+        .eq('id', caseId);
+
+      if (error) throw error;
+
+      // 从待审批列表中移除
+      setPendingCases(prev => prev.filter(c => c.id !== caseId));
+      
+      toast({
+        title: '审批成功',
+        description: '案例已通过审批并发布',
+      });
+    } catch (error) {
+      console.error('审批失败:', error);
+      toast({
+        title: '审批失败',
+        description: '请稍后再试',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // 审批拒绝
+  const handleRejectCase = async (caseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('cases')
+        .update({ status: 'rejected' })
+        .eq('id', caseId);
+
+      if (error) throw error;
+
+      // 从待审批列表中移除
+      setPendingCases(prev => prev.filter(c => c.id !== caseId));
+      
+      toast({
+        title: '已拒绝',
+        description: '案例审批已拒绝',
+      });
+    } catch (error) {
+      console.error('拒绝失败:', error);
+      toast({
+        title: '操作失败',
+        description: '请稍后再试',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleDeleteCase = async (caseId: string) => {
     try {
@@ -73,7 +163,8 @@ export default function DashboardPage() {
     const statusMap = {
       published: { label: '已发布', variant: 'default' as const },
       draft: { label: '草稿', variant: 'secondary' as const },
-      pending: { label: '待审核', variant: 'outline' as const }
+      approval: { label: '待审批', variant: 'outline' as const },
+      rejected: { label: '已拒绝', variant: 'destructive' as const }
     };
     const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.published;
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
@@ -174,6 +265,9 @@ export default function DashboardPage() {
             <TabsTrigger value="cases">我的案例</TabsTrigger>
             <TabsTrigger value="drafts">草稿箱</TabsTrigger>
             <TabsTrigger value="favorites">我点赞的</TabsTrigger>
+            {profile?.role === 'Admin' && (
+              <TabsTrigger value="pending">待审批</TabsTrigger>
+            )}
             <TabsTrigger value="analytics">数据分析</TabsTrigger>
           </TabsList>
 
@@ -489,6 +583,102 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {profile?.role === 'Admin' && (
+            <TabsContent value="pending" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>待审批案例</CardTitle>
+                  <CardDescription>管理需要审批的案例</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pendingLoading ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">加载中...</p>
+                    </div>
+                  ) : pendingCases.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">暂无待审批案例</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {pendingCases.map((case_) => (
+                        <Card key={case_.id} className="group">
+                          <div className="aspect-video bg-muted rounded-t-lg overflow-hidden relative">
+                            <img 
+                              src={case_.image_url} 
+                              alt={case_.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute top-2 right-2">
+                              {getStatusBadge(case_.status)}
+                            </div>
+                          </div>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-sm line-clamp-2">{case_.title}</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                              {case_.description}
+                            </p>
+                            
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                              <div className="flex items-center gap-1">
+                                 <span>作者: {case_.profiles?.display_name || case_.profiles?.username || '未知'}</span>
+                               </div>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(case_.created_at).toLocaleDateString('zh-CN')}
+                              </div>
+                            </div>
+
+                            {case_.tags && case_.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {case_.tags.slice(0, 3).map((tag, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1"
+                                onClick={() => router.push(`/case/${case_.id}`)}
+                              >
+                                预览
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => handleApproveCase(case_.id)}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                通过
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => handleRejectCase(case_.id)}
+                              >
+                                <XCircle className="h-3 w-3 mr-1" />
+                                拒绝
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -422,7 +422,7 @@ export default function CreateCasePage() {
         javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
         author_id: user.id,
-        status: 'published',
+        status: 'approval',
         tags: tags,
       };
 
@@ -450,8 +450,8 @@ export default function CreateCasePage() {
       addUserCase(userCaseData);
 
       toast({
-        title: '发布成功',
-        description: '案例已成功发布',
+        title: '提交审核成功',
+        description: '案例已提交审核，审核通过后将在首页展示',
       });
 
       router.push('/dashboard');
@@ -843,7 +843,7 @@ export default function CreateCasePage() {
                 className="flex items-center gap-2"
               >
                 <Send className="h-4 w-4" />
-                立即发布
+                提交审核
               </Button>
             </div>
           </form>

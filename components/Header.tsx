@@ -57,13 +57,13 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
             />
           </div>
           
-          {/* Contribute Button - only show when logged in */}
-          {user && (
+          {/* Contribute Button */}
+          <Link href={user ? "/case/create" : "/auth"}>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
               贡献
             </Button>
-          )}
+          </Link>
           
           {/* Auth Section */}
           {loading ? (
