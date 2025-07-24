@@ -13,6 +13,7 @@ interface UserProfile {
   bio?: string;
   created_at: string;
   updated_at: string;
+  role?: string;
 }
 
 // 用户统计数据接口
@@ -143,13 +144,17 @@ export const useUserStore = create<UserStore>()(
 
       // 认证动作
       setAuth: (user, session) => {
+        const currentState = get();
         set({ user, session });
         
-        // 如果用户登录，异步获取用户数据
-        if (user && session) {
+        // 如果用户登录且用户ID发生变化，才获取用户数据
+        if (user && session && (!currentState.user || currentState.user.id !== user.id)) {
           setTimeout(() => {
             const store = get();
-            store.fetchProfile();
+            // 只有当 profile 不存在或用户ID不匹配时才重新获取
+            if (!store.profile || store.profile.user_id !== user.id) {
+              store.fetchProfile();
+            }
             store.fetchStats();
             store.fetchUserCases();
             store.fetchFavorites();
@@ -216,8 +221,13 @@ export const useUserStore = create<UserStore>()(
       },
 
       fetchProfile: async () => {
-        const { user } = get();
+        const { user, profile, profileLoading } = get();
         if (!user) return;
+        
+        // 如果已经在加载中或者已有当前用户的 profile，则跳过
+        if (profileLoading || (profile && profile.user_id === user.id)) {
+          return;
+        }
 
         try {
           set({ profileLoading: true });
@@ -265,7 +275,7 @@ export const useUserStore = create<UserStore>()(
           // 获取真实的点赞数量 (从user_favorites表统计)
           let totalLikes = 0;
           if (cases && cases.length > 0) {
-            const caseIds = cases.map((c: any) => c.id);
+            const caseIds = cases.map((c: { id: string; view_count: number }) => c.id);
             const { data: likes, error: likesError } = await supabase
               .from('user_favorites')
               .select('case_id')
@@ -281,7 +291,7 @@ export const useUserStore = create<UserStore>()(
           // 获取评论数量 (只有当有案例时才查询)
           let totalComments = 0;
           if (cases && cases.length > 0) {
-            const caseIds = cases.map((c: any) => c.id);
+            const caseIds = cases.map((c: { id: string; view_count: number }) => c.id);
             const { data: comments, error: commentsError } = await supabase
               .from('case_comments')
               .select('id')

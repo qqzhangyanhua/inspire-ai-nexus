@@ -10,6 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { CodeEditorTabs } from "@/components/CodeEditorTabs";
 import {
+  ensureStorageBucket,
+  uploadFile,
+} from "@/integrations/supabase/storage";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -36,7 +40,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ArrowLeft, Plus, X, Save, Send } from "lucide-react";
+import { ArrowLeft, Plus, X, Save, Send, Upload, Trash2 } from "lucide-react";
 
 // 表单验证 schema
 const caseSchema = z.object({
@@ -45,7 +49,7 @@ const caseSchema = z.object({
     .string()
     .min(10, "描述至少需要10个字符")
     .max(500, "描述不能超过500个字符"),
-  image_url: z.string().url("请输入有效的图片链接"),
+  image_url: z.string().optional(), // 改为可选，因为我们用本地状态管理
   category_id: z.string().min(1, "请选择分类"),
   prompt: z
     .string()
@@ -79,6 +83,13 @@ const CreateCase = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  // 添加图片上传相关状态
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [bucketReady, setBucketReady] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string>("");
+  const [remoteImageUrl, setRemoteImageUrl] = useState<string>("");
 
   const form = useForm<CaseFormData>({
     resolver: zodResolver(caseSchema),
@@ -127,7 +138,35 @@ const CreateCase = () => {
       return;
     }
     fetchCategories();
+    checkStorageBucket();
   }, [user, navigate]);
+
+  // 清理本地预览URL，避免内存泄漏
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    };
+  }, [localPreviewUrl]);
+
+  // 检查存储桶是否准备就绪
+  const checkStorageBucket = async () => {
+    try {
+      const ready = await ensureStorageBucket("images");
+      setBucketReady(ready);
+      if (!ready) {
+        toast({
+          title: "存储桶不存在",
+          description: "请在 Supabase 控制台创建 images 存储桶并配置 RLS 策略",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("检查存储桶时出错:", error);
+      setBucketReady(false);
+    }
+  };
 
   // 获取分类列表
   const fetchCategories = async () => {
@@ -147,6 +186,121 @@ const CreateCase = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // 处理图片文件选择并自动上传
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setImageFile(file);
+
+      // 立即创建本地预览
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviewUrl(previewUrl);
+
+      // 选择文件后立即上传
+      await uploadImage(file);
+
+      // 重置文件输入，允许重复选择相同文件
+      e.target.value = "";
+    }
+  };
+
+  // 上传图片
+  const uploadImage = async (file: File) => {
+    if (!bucketReady) {
+      toast({
+        title: "存储未就绪",
+        description: "存储系统未准备就绪，请稍后再试",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+
+      // 使用封装的上传函数
+      const result = await uploadFile(file, "images", "public");
+
+      // 保存远程图片URL，但不立即更新预览（保持本地预览）
+      setRemoteImageUrl(result.fullPath);
+
+      toast({
+        title: "上传成功",
+        description: "封面图片已成功上传",
+      });
+    } catch (error: unknown) {
+      console.error("上传错误:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "图片上传过程中发生错误";
+      toast({
+        title: "上传失败",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      // 上传失败时清空文件选择
+      setImageFile(null);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // 删除已上传的图片
+  const handleRemoveImage = () => {
+    // 清理本地预览URL
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
+    
+    setImageFile(null);
+    setLocalPreviewUrl("");
+    setRemoteImageUrl("");
+    form.setValue("image_url", "");
+  };
+
+  // 处理拖拽事件
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+
+    if (uploadingImage || !bucketReady) return;
+
+          const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        // 检查是否为图片文件
+        if (file.type.startsWith("image/")) {
+          setImageFile(file);
+          
+          // 立即创建本地预览
+          const previewUrl = URL.createObjectURL(file);
+          setLocalPreviewUrl(previewUrl);
+          
+          await uploadImage(file);
+        } else {
+          toast({
+            title: "文件类型错误",
+            description: "请选择图片文件（JPG、PNG、GIF）",
+            variant: "destructive",
+          });
+        }
+      }
   };
 
   // 添加标签
@@ -171,12 +325,22 @@ const CreateCase = () => {
   const saveDraft = async (data: CaseFormData) => {
     if (!user) return;
 
+    // 检查是否有远程图片URL
+    if (!remoteImageUrl) {
+      toast({
+        title: "请等待图片上传完成",
+        description: "图片正在上传中，请稍候再试",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const caseData = {
         title: data.title,
         description: data.description,
-        image_url: data.image_url,
+        image_url: remoteImageUrl, // 使用远程图片URL
         category_id: data.category_id,
         prompt: data.prompt,
         html_content: data.html_content,
@@ -233,12 +397,22 @@ const CreateCase = () => {
   const publishCase = async (data: CaseFormData) => {
     if (!user) return;
 
+    // 检查是否有远程图片URL
+    if (!remoteImageUrl) {
+      toast({
+        title: "请等待图片上传完成",
+        description: "图片正在上传中，请稍候再试",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const caseData = {
         title: data.title,
         description: data.description,
-        image_url: data.image_url,
+        image_url: remoteImageUrl, // 使用远程图片URL
         category_id: data.category_id,
         prompt: data.prompt,
         html_content: data.html_content,
@@ -372,11 +546,128 @@ const CreateCase = () => {
                     <FormItem>
                       <FormLabel>封面图片 *</FormLabel>
                       <FormControl>
-                        <Input placeholder="请输入图片链接" {...field} />
+                        <div className="space-y-4">
+                          {/* 已上传图片预览或上传区域 */}
+                          {localPreviewUrl ? (
+                                                          <div className="relative inline-block">
+                                <img
+                                  src={localPreviewUrl}
+                                  alt="封面预览"
+                                  className="w-full max-w-sm h-auto rounded-md border border-gray-200"
+                                />
+                              <div className="absolute top-2 right-2 flex gap-2">
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    // 触发文件选择
+                                    const input = document.getElementById(
+                                      "cover-image-input"
+                                    ) as HTMLInputElement;
+                                    if (input) {
+                                      input.click();
+                                    }
+                                  }}
+                                  disabled={uploadingImage}
+                                  className="shadow-sm"
+                                >
+                                  <Upload className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={handleRemoveImage}
+                                  disabled={uploadingImage}
+                                  className="shadow-sm"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              {uploadingImage && (
+                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
+                                  <div className="text-white text-sm">
+                                    上传中...
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div
+                              className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                                dragOver
+                                  ? "border-blue-400 bg-blue-50"
+                                  : "border-gray-300 hover:border-gray-400"
+                              } ${
+                                uploadingImage
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                if (!uploadingImage && bucketReady) {
+                                  const input = document.getElementById(
+                                    "cover-image-input"
+                                  ) as HTMLInputElement;
+                                  if (input) {
+                                    input.click();
+                                  }
+                                }
+                              }}
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                            >
+                              {uploadingImage ? (
+                                <div className="text-gray-500">
+                                  <Upload className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+                                  <p>上传中...</p>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`${
+                                    dragOver ? "text-blue-600" : "text-gray-500"
+                                  }`}
+                                >
+                                  <Upload className="h-8 w-8 mx-auto mb-2" />
+                                  <p className="text-sm">
+                                    {dragOver
+                                      ? "释放鼠标上传图片"
+                                      : "点击选择图片或拖拽图片到此处"}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    支持 JPG、PNG、GIF 格式，单张图片
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 隐藏的文件输入 */}
+                          <Input
+                            id="cover-image-input"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileChange}
+                            disabled={uploadingImage || !bucketReady}
+                            className="hidden"
+                          />
+
+                          {/* 存储桶状态提示 */}
+                          {!bucketReady && (
+                            <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md text-sm">
+                              存储桶不存在，请先在 Supabase 控制台创建 images
+                              存储桶
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                       <FormDescription>
-                        建议使用高质量的设计截图作为封面
+                        建议使用高质量的设计截图作为封面，选择图片后会自动上传
                       </FormDescription>
+                      {!localPreviewUrl && (
+                        <p className="text-sm text-red-500">请上传封面图片</p>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
