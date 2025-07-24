@@ -9,23 +9,52 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { CodeEditorTabs } from "@/components/CodeEditorTabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { ArrowLeft, Plus, X, Save, Send } from "lucide-react";
 
 // 表单验证 schema
 const caseSchema = z.object({
   title: z.string().min(1, "请输入案例标题").max(100, "标题不能超过100个字符"),
-  description: z.string().min(10, "描述至少需要10个字符").max(500, "描述不能超过500个字符"),
+  description: z
+    .string()
+    .min(10, "描述至少需要10个字符")
+    .max(500, "描述不能超过500个字符"),
   image_url: z.string().url("请输入有效的图片链接"),
   category_id: z.string().min(1, "请选择分类"),
-  prompt: z.string().min(10, "提示词至少需要10个字符").max(1000, "提示词不能超过1000个字符"),
-  html_content: z.string().min(10, "HTML内容至少需要10个字符").max(10000, "HTML内容不能超过10000个字符"),
+  prompt: z
+    .string()
+    .min(10, "提示词至少需要10个字符")
+    .max(1000, "提示词不能超过1000个字符"),
+  html_content: z
+    .string()
+    .min(10, "HTML内容至少需要10个字符")
+    .max(10000, "HTML内容不能超过10000个字符"),
   css_content: z.string().optional(),
   javascript_content: z.string().optional(),
   preview_url: z.string().optional(),
@@ -94,7 +123,7 @@ const CreateCase = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      navigate("/auth");
       return;
     }
     fetchCategories();
@@ -104,14 +133,14 @@ const CreateCase = () => {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
-        .select('id, name, name_zh')
-        .order('created_at');
+        .from("categories")
+        .select("id, name, name_zh")
+        .order("created_at");
 
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
-      console.error('获取分类失败:', error);
+      console.error("获取分类失败:", error);
       toast({
         title: "获取分类失败",
         description: "无法获取分类列表，请稍后再试",
@@ -126,16 +155,16 @@ const CreateCase = () => {
     if (tag && !tags.includes(tag) && tags.length < 10) {
       const newTags = [...tags, tag];
       setTags(newTags);
-      form.setValue('tags', newTags);
+      form.setValue("tags", newTags);
       setTagInput("");
     }
   };
 
   // 移除标签
   const removeTag = (tagToRemove: string) => {
-    const newTags = tags.filter(tag => tag !== tagToRemove);
+    const newTags = tags.filter((tag) => tag !== tagToRemove);
     setTags(newTags);
-    form.setValue('tags', newTags);
+    form.setValue("tags", newTags);
   };
 
   // 保存草稿
@@ -155,12 +184,12 @@ const CreateCase = () => {
         javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
         author_id: user.id,
-        status: 'draft',
+        status: "draft",
         tags: tags,
       };
 
       const { data: newCase, error } = await supabase
-        .from('cases')
+        .from("cases")
         .insert(caseData)
         .select()
         .single();
@@ -181,15 +210,15 @@ const CreateCase = () => {
       };
 
       addUserCase(userCaseData);
-      
+
       toast({
         title: "草稿保存成功",
         description: "您可以在个人中心继续编辑",
       });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('保存草稿失败:', error);
+      console.error("保存草稿失败:", error);
       toast({
         title: "保存草稿失败",
         description: "无法保存草稿，请稍后再试",
@@ -217,12 +246,12 @@ const CreateCase = () => {
         javascript_content: data.javascript_content || null,
         preview_url: data.preview_url || null,
         author_id: user.id,
-        status: 'published',
+        status: "published",
         tags: tags,
       };
 
       const { data: newCase, error } = await supabase
-        .from('cases')
+        .from("cases")
         .insert(caseData)
         .select()
         .single();
@@ -243,15 +272,15 @@ const CreateCase = () => {
       };
 
       addUserCase(userCaseData);
-      
+
       toast({
         title: "发布成功",
         description: "案例已成功发布",
       });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('发布案例失败:', error);
+      console.error("发布案例失败:", error);
       toast({
         title: "发布失败",
         description: "无法发布案例，请稍后再试",
@@ -267,14 +296,14 @@ const CreateCase = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      
+
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate("/dashboard")}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -282,7 +311,9 @@ const CreateCase = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-foreground">创建新案例</h1>
-              <p className="text-muted-foreground">分享您的创意设计和代码实现</p>
+              <p className="text-muted-foreground">
+                分享您的创意设计和代码实现
+              </p>
             </div>
           </div>
         </div>
@@ -303,7 +334,10 @@ const CreateCase = () => {
                     <FormItem>
                       <FormLabel>案例标题 *</FormLabel>
                       <FormControl>
-                        <Input placeholder="例如：毛玻璃风格仪表板设计" {...field} />
+                        <Input
+                          placeholder="例如：毛玻璃风格仪表板设计"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -355,7 +389,10 @@ const CreateCase = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>分类 *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="选择分类" />
@@ -381,7 +418,10 @@ const CreateCase = () => {
                       <FormItem>
                         <FormLabel>预览链接</FormLabel>
                         <FormControl>
-                          <Input placeholder="在线预览链接（可选）" {...field} />
+                          <Input
+                            placeholder="在线预览链接（可选）"
+                            {...field}
+                          />
                         </FormControl>
                         <FormDescription>
                           可提供CodePen、JSFiddle等在线预览
@@ -426,12 +466,14 @@ const CreateCase = () => {
 
             {/* 代码编辑器卡片 */}
             <CodeEditorTabs
-              html={form.watch('html_content')}
-              css={form.watch('css_content') || ''}
-              javascript={form.watch('javascript_content') || ''}
-              onHtmlChange={(value) => form.setValue('html_content', value)}
-              onCssChange={(value) => form.setValue('css_content', value)}
-              onJavascriptChange={(value) => form.setValue('javascript_content', value)}
+              html={form.watch("html_content")}
+              css={form.watch("css_content") || ""}
+              javascript={form.watch("javascript_content") || ""}
+              onHtmlChange={(value) => form.setValue("html_content", value)}
+              onCssChange={(value) => form.setValue("css_content", value)}
+              onJavascriptChange={(value) =>
+                form.setValue("javascript_content", value)
+              }
               showPreview={true}
             />
 
@@ -439,7 +481,9 @@ const CreateCase = () => {
             <Card>
               <CardHeader>
                 <CardTitle>标签</CardTitle>
-                <CardDescription>添加相关标签，便于其他用户发现</CardDescription>
+                <CardDescription>
+                  添加相关标签，便于其他用户发现
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
@@ -448,13 +492,17 @@ const CreateCase = () => {
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         addTag();
                       }
                     }}
                   />
-                  <Button type="button" onClick={addTag} disabled={!tagInput.trim() || tags.length >= 10}>
+                  <Button
+                    type="button"
+                    onClick={addTag}
+                    disabled={!tagInput.trim() || tags.length >= 10}
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -462,7 +510,11 @@ const CreateCase = () => {
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-2">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-2"
+                      >
                         {tag}
                         <X
                           className="h-3 w-3 cursor-pointer hover:text-destructive"
