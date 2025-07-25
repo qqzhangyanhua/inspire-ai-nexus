@@ -93,7 +93,7 @@ const LivePreview = ({ html, css, javascript }: LivePreviewProps) => {
             <style>${css}</style>
           </head>
           <body>
-            ${cleanHTML.replace(/<html[^>]*>|<\/html>|<head[^>]*>.*<\/head>|<body[^>]*>|<\/body>/gis, '')}
+            ${cleanHTML.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<body[^>]*>|<\/body>/gi, '')}
             <script>${javascript}</script>
           </body>
           </html>
@@ -196,7 +196,7 @@ const LivePreview = ({ html, css, javascript }: LivePreviewProps) => {
               <style>${css}</style>
             </head>
             <body>
-              ${cleanHTML.replace(/<html[^>]*>|<\/html>|<head[^>]*>.*<\/head>|<body[^>]*>|<\/body>/gis, '')}
+              ${cleanHTML.replace(/<html[^>]*>|<\/html>|<head[^>]*>[\s\S]*?<\/head>|<body[^>]*>|<\/body>/gi, '')}
               <script>${javascript}</script>
             </body>
             </html>

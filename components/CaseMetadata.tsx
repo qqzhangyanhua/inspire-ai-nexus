@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { copyToClipboard } from "@/lib/utils";
 
 interface CaseMetadataProps {
   caseData: {
@@ -31,12 +32,21 @@ interface CaseMetadataProps {
 const CaseMetadata = ({ caseData, isLiked = false, onToggleLike }: CaseMetadataProps) => {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
-  const copyPrompt = () => {
-    navigator.clipboard.writeText(caseData.prompt);
-    toast({
-      title: "提示词已复制！",
-      description: "AI提示词已复制到剪贴板",
-    });
+  const copyPrompt = async () => {
+    const success = await copyToClipboard(caseData.prompt);
+    
+    if (success) {
+      toast({
+        title: "提示词已复制！",
+        description: "AI提示词已复制到剪贴板",
+      });
+    } else {
+      toast({
+        title: "复制失败",
+        description: "请手动选择并复制提示词",
+        variant: "destructive",
+      });
+    }
   };
 
   // 从prompt生成结构化分解（如果没有的话）

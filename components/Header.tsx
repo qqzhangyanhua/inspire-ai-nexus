@@ -40,6 +40,11 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
               工作台
             </Link>
           )}
+          {user && (
+            <Link href="/ai-tools" className="text-foreground hover:text-primary transition-colors">
+              AI工具
+            </Link>
+          )}
           <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
             社区
           </span>

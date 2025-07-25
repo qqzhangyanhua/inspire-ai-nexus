@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { copyToClipboard } from "@/lib/utils";
 
 interface CodeEditorProps {
   html: string;
@@ -13,12 +14,21 @@ interface CodeEditorProps {
 }
 
 const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
-  const copyToClipboard = (content: string, type: string) => {
-    navigator.clipboard.writeText(content);
-    toast({
-      title: "已复制！",
-      description: `${type} 代码已复制到剪贴板`,
-    });
+  const handleCopyToClipboard = async (content: string, type: string) => {
+    const success = await copyToClipboard(content);
+    
+    if (success) {
+      toast({
+        title: "已复制！",
+        description: `${type} 代码已复制到剪贴板`,
+      });
+    } else {
+      toast({
+        title: "复制失败",
+        description: "请手动选择并复制代码",
+        variant: "destructive",
+      });
+    }
   };
 
   const CodeBlock = ({
@@ -34,7 +44,7 @@ const CodeEditor = ({ html, css, javascript }: CodeEditorProps) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => copyToClipboard(code, language)}
+        onClick={() => handleCopyToClipboard(code, language)}
         className="absolute right-2 top-2 z-10 bg-background/80 hover:bg-background"
       >
         <Copy className="w-4 h-4 mr-1" />
