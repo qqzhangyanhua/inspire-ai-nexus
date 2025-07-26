@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)",
+      "Bash(rm 20250123000000-add-role-to-profiles.sql 20250123000001-fix-recursive-policy.sql 20250124000000-add-approval-status.sql 20250125000000-create-prompt-templates.sql 20250127000000-fix-google-oauth-profile-creation.sql 20250127000001-create-missing-profiles.sql 20250722082240-b7c112d5-df2f-4877-b038-7771707096a0.sql 20250722084234-7723c515-ca84-4a0b-ba5d-c9b76ee04179.sql 20250722090957-bb23807e-4133-484b-bc73-f7a35e8b0fb4.sql 20250722091856-1ba48da7-0736-4c5e-9cde-50fc458807bf.sql 20250722150106-ad5960b9-20b4-46c1-9d60-3befadb1f61c.sql)"
+    ],
+    "deny": []
+  }
+}

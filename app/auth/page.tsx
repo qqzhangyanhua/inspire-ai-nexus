@@ -13,7 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { Mail } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -98,6 +100,31 @@ export default function AuthPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) throw error;
+      
+      // OAuth会自动重定向，不需要手动处理成功状态
+    } catch (error: any) {
+      console.error('Google登录错误:', error);
+      toast.error(error.message || 'Google登录失败，请重试');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -171,6 +198,32 @@ export default function AuthPage() {
               {loading ? '处理中...' : isLogin ? '登录' : '注册'}
             </Button>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  或者
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              使用 Google 账户{isLogin ? '登录' : '注册'}
+            </Button>
+          </div>
 
           <div className="mt-6 text-center">
             <button

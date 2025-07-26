@@ -259,56 +259,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* AI工具快速访问 */}
-        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold text-blue-900">AI工具箱</CardTitle>
-                <CardDescription className="text-blue-700">使用AI快速生成Tailwind CSS组件</CardDescription>
-              </div>
-              <div className="text-blue-600">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">图片转HTML</h4>
-                  <p className="text-sm text-gray-600">上传图片，AI自动生成对应的HTML代码</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-100">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">提示词转HTML</h4>
-                  <p className="text-sm text-gray-600">输入描述，AI生成相应的HTML组件</p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4">
-              <Button 
-                onClick={() => router.push('/ai-tools')} 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                开始使用AI工具
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+   
 
         {/* 主要内容区域 */}
         <Tabs defaultValue="cases" className="space-y-6">

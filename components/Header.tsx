@@ -1,9 +1,10 @@
 
-import { Search, User, LogOut, Plus, BarChart3 } from "lucide-react";
+import { Search, User, LogOut, Plus, BarChart3, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserStore } from "@/stores/useUserStore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ interface HeaderProps {
 
 const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
   const { user, signOut, loading } = useAuth();
+  const { profile } = useUserStore();
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -43,6 +45,11 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
           {user && (
             <Link href="/ai-tools" className="text-foreground hover:text-primary transition-colors">
               AI工具
+            </Link>
+          )}
+          {user && profile?.role === 'Admin' && (
+            <Link href="/admin/data-management" className="text-foreground hover:text-primary transition-colors">
+              数据管理
             </Link>
           )}
           <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
@@ -91,6 +98,14 @@ const Header = ({ searchQuery, onSearchChange }: HeaderProps) => {
                     工作台
                   </DropdownMenuItem>
                 </Link>
+                {profile?.role === 'Admin' && (
+                  <Link href="/admin/data-management">
+                    <DropdownMenuItem>
+                      <Database className="w-4 h-4 mr-2" />
+                      数据管理
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
