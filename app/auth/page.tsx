@@ -62,11 +62,12 @@ export default function AuthPage() {
       if (error) throw error;
 
       toast.success('注册成功！请检查邮箱并确认账户。');
-    } catch (error: any) {
-      if (error.message.includes('User already registered')) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '注册失败';
+      if (errorMessage.includes('User already registered')) {
         toast.error('该邮箱已注册，请直接登录。');
       } else {
-        toast.error(error.message || '注册失败');
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -89,11 +90,12 @@ export default function AuthPage() {
         toast.success('登录成功！');
         router.push('/');
       }
-    } catch (error: any) {
-      if (error.message.includes('Invalid login credentials')) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '登录失败';
+      if (errorMessage.includes('Invalid login credentials')) {
         toast.error('邮箱或密码错误');
       } else {
-        toast.error(error.message || '登录失败');
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -118,9 +120,10 @@ export default function AuthPage() {
       if (error) throw error;
       
       // OAuth会自动重定向，不需要手动处理成功状态
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Google登录错误:', error);
-      toast.error(error.message || 'Google登录失败，请重试');
+      const errorMessage = error instanceof Error ? error.message : 'Google登录失败，请重试';
+      toast.error(errorMessage);
       setLoading(false);
     }
   };

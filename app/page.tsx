@@ -3,21 +3,19 @@
 import Header from '@/components/Header';
 import FilterPills from '@/components/FilterPills';
 import InspirationGrid from '@/components/InspirationGrid';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserStore } from '@/stores/useUserStore';
 import { useToast } from '@/hooks/use-toast';
 
-export default function HomePage() {
-  const [selectedFilter, setSelectedFilter] = useState('全部');
-  const [searchQuery, setSearchQuery] = useState('');
+// OAuth回调处理组件
+function OAuthCallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth, fetchProfile } = useUserStore();
   const { toast } = useToast();
 
-  // 处理OAuth回调
   useEffect(() => {
     const handleOAuthCallback = async () => {
       // 检查URL中的错误参数
@@ -82,8 +80,19 @@ export default function HomePage() {
     }
   }, [searchParams, router, setAuth, fetchProfile, toast]);
 
+  return null;
+}
+
+export default function HomePage() {
+  const [selectedFilter, setSelectedFilter] = useState('全部');
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <div className="min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <OAuthCallbackHandler />
+      </Suspense>
+      
       <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
       <main className="container mx-auto px-4 py-8">
