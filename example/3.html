@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizontal Scroll with Tailwind CSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex flex-col items-center w-full bg-neutral-900">
+
+    <div class="emptybox flex justify-center items-center select-none w-[65rem] h-[40rem] bg-lime-500 rounded-[5rem] mb-32 font-sans text-[8rem] text-neutral-100 font-black uppercase">
+        empty
+    </div>
+    <div class="emptybox flex justify-center items-center select-none w-[65rem] h-[40rem] bg-lime-500 rounded-[5rem] mb-32 font-sans text-[8rem] text-neutral-100 font-black uppercase">
+        empty
+    </div>
+
+    <div class="scrollbox flex justify-start items-start w-full overflow-hidden select-none">
+        <div class="scrollbox_container flex justify-start items-center h-screen shrink-0 select-none">
+
+            <div class="scrollbox_container_card relative flex justify-center items-center select-none w-[65rem] h-[40rem] bg-neutral-100 rounded-[5rem] ml-20 shrink-0 overflow-hidden">
+                <p class="font-sans text-[6rem] text-neutral-900 font-black uppercase z-10 pointer-events-none select-none">card one</p>
+                <svg viewBox="0 0 1098 333" fill="none" xmlns="http://www.w3.org/2000/svg" class="scc_city scc_city1 absolute bottom-0 h-full opacity-70 pointer-events-none select-none left-0">
+                    <path d="M1098 333H0V168.125L108.833 76.5L144.333 168.125L200.5 131.625L231.667 215.375L313.333 151.375L351.667 251.875L386.667 215.375L433.333 302.5L461.667 266L530.5 333H1098Z" fill="#2d2d2d"/>
+                    <path d="M216.667 333H129.5L162.5 244.125L216.667 333Z" fill="#2d2d2d"/>
+                </svg>
+                <svg viewBox="0 0 171 78" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="scc_truck scc_truck1 absolute bottom-0 h-24 pointer-events-none select-none left-0">
+                    <style type="text/css">
+                        .st0{fill:#171717;}
+                    </style>
+                    <path class="st0" d="M170,63.3v2.9c0,1.5-1.2,2.6-2.6,2.6h-18.1c-0.7,5.2-5.1,9.2-10.4,9.2c-5.3,0-9.8-4-10.4-9.2h-9.2V18.9 c0-2.4,1.9-4.3,4.3-4.3h19.1c3,0,5.8,1.5,7.5,3.9l13.9,19.7c0.8,1.1,1.2,2.5,1.2,3.8v18.6h2.1C168.8,60.7,170,61.9,170,63.3z"/>
+                    <path class="st0" d="M115.2,22.7h5v46.1h-5.1v0.1h-44C70.4,74,66,78,60.7,78s-9.7-4-10.4-9.1h-9.9C39.7,74,35.3,78,30,78 s-9.7-4-10.4-9.1h-17c-1.5,0-2.7-1.2-2.7-2.7v-3c0-1.5,1.2-2.7,2.7-2.7h3v-55C5.6,2.4,8,0,11.1,0h98.6c3,0,5.5,2.4,5.5,5.5V22.7z"/>
+                </svg>
+            </div>
+
+            <div class="scrollbox_container_card relative flex justify-center items-center select-none w-[65rem] h-[40rem] bg-neutral-100 rounded-[5rem] ml-20 shrink-0 overflow-hidden">
+                <p class="font-sans text-[6rem] text-neutral-900 font-black uppercase z-10 pointer-events-none select-none">card two</p>
+                 <svg viewBox="0 0 1098 333" fill="none" xmlns="http://www.w3.org/2000/svg" class="scc_city scc_city2 absolute bottom-0 h-full opacity-70 pointer-events-none select-none left-[calc(-100%_-_5rem)]">
+                    <path d="M1098 333H0V168.125L108.833 76.5L144.333 168.125L200.5 131.625L231.667 215.375L313.333 151.375L351.667 251.875L386.667 215.375L433.333 302.5L461.667 266L530.5 333H1098Z" fill="#2d2d2d"/>
+                    <path d="M216.667 333H129.5L162.5 244.125L216.667 333Z" fill="#2d2d2d"/>
+                </svg>
+                <svg viewBox="0 0 171 78" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="scc_truck scc_truck2 absolute bottom-0 h-24 pointer-events-none select-none left-[calc(-100%_-_5rem)]">
+                    <style type="text/css">
+                        .st0{fill:#171717;}
+                    </style>
+                    <path class="st0" d="M170,63.3v2.9c0,1.5-1.2,2.6-2.6,2.6h-18.1c-0.7,5.2-5.1,9.2-10.4,9.2c-5.3,0-9.8-4-10.4-9.2h-9.2V18.9 c0-2.4,1.9-4.3,4.3-4.3h19.1c3,0,5.8,1.5,7.5,3.9l13.9,19.7c0.8,1.1,1.2,2.5,1.2,3.8v18.6h2.1C168.8,60.7,170,61.9,170,63.3z"/>
+                    <path class="st0" d="M115.2,22.7h5v46.1h-5.1v0.1h-44C70.4,74,66,78,60.7,78s-9.7-4-10.4-9.1h-9.9C39.7,74,35.3,78,30,78 s-9.7-4-10.4-9.1h-17c-1.5,0-2.7-1.2-2.7-2.7v-3c0-1.5,1.2-2.7,2.7-2.7h3v-55C5.6,2.4,8,0,11.1,0h98.6c3,0,5.5,2.4,5.5,5.5V22.7z"/>
+                </svg>
+            </div>
+
+            <div class="scrollbox_container_card relative flex justify-center items-center select-none w-[65rem] h-[40rem] bg-neutral-100 rounded-[5rem] ml-20 shrink-0 overflow-hidden">
+                <p class="font-sans text-[6rem] text-neutral-900 font-black uppercase z-10 pointer-events-none select-none">card three</p>
+                 <svg viewBox="0 0 1098 333" fill="none" xmlns="http://www.w3.org/2000/svg" class="scc_city scc_city3 absolute bottom-0 h-full opacity-70 pointer-events-none select-none left-[calc(-200%_-_10rem)]">
+                    <path d="M1098 333H0V168.125L108.833 76.5L144.333 168.125L200.5 131.625L231.667 215.375L313.333 151.375L351.667 251.875L386.667 215.375L433.333 302.5L461.667 266L530.5 333H1098Z" fill="#2d2d2d"/>
+                    <path d="M216.667 333H129.5L162.5 244.125L216.667 333Z" fill="#2d2d2d"/>
+                </svg>
+                <svg viewBox="0 0 171 78" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="scc_truck scc_truck3 absolute bottom-0 h-24 pointer-events-none select-none left-[calc(-200%_-_10rem)]">
+                    <style type="text/css">
+                        .st0{fill:#171717;}
+                    </style>
+                    <path class="st0" d="M170,63.3v2.9c0,1.5-1.2,2.6-2.6,2.6h-18.1c-0.7,5.2-5.1,9.2-10.4,9.2c-5.3,0-9.8-4-10.4-9.2h-9.2V18.9 c0-2.4,1.9-4.3,4.3-4.3h19.1c3,0,5.8,1.5,7.5,3.9l13.9,19.7c0.8,1.1,1.2,2.5,1.2,3.8v18.6h2.1C168.8,60.7,170,61.9,170,63.3z"/>
+                    <path class="st0" d="M115.2,22.7h5v46.1h-5.1v0.1h-44C70.4,74,66,78,60.7,78s-9.7-4-10.4-9.1h-9.9C39.7,74,35.3,78,30,78 s-9.7-4-10.4-9.1h-17c-1.5,0-2.7-1.2-2.7-2.7v-3c0-1.5,1.2-2.7,2.7-2.7h3v-55C5.6,2.4,8,0,11.1,0h98.6c3,0,5.5,2.4,5.5,5.5V22.7z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="emptybox flex justify-center items-center select-none w-[65rem] h-[40rem] bg-lime-500 rounded-[5rem] mt-32 mb-32 font-sans text-[8rem] text-neutral-100 font-black uppercase">
+        empty
+    </div>
+    <div class="emptybox flex justify-center items-center select-none w-[65rem] h-[40rem] bg-lime-500 rounded-[5rem] mb-32 font-sans text-[8rem] text-neutral-100 font-black uppercase">
+        empty
+    </div>
+
+<script>
+    // JIEJOE produce
+    // b站主页：https://space.bilibili.com/3546390319860710
+    const scrollbox = {
+        container: document.querySelector(".scrollbox_container"),
+        cards: [...document.querySelectorAll(".scrollbox_container_card")],
+        trucks: [...document.querySelectorAll(".scc_truck")],
+        citys: [...document.querySelectorAll(".scc_city")],
+        trigger_distance: 0,
+        border_distance: 0,
+        distance: 0,
+        resize() {
+            let _scrollbox = document.querySelector(".scrollbox");
+            // Set the scrollable area's height to be the width of the horizontal container
+            // This defines how long you scroll vertically to move the horizontal content
+            _scrollbox.style.height = `${this.container.offsetWidth}px`;
+            this.trigger_distance = _scrollbox.offsetTop;
+            this.border_distance = _scrollbox.offsetTop + _scrollbox.offsetHeight - innerHeight;
+        },
+        move() {
+            // Only run the animation when the scrollbox is in view
+            if (scrollY >= this.trigger_distance &&
+                scrollY <= this.border_distance) {
+                this.distance = scrollY - this.trigger_distance;
+                this.container.style.transform = `translateY(${this.distance}px)`;
+                
+                // Calculate the horizontal translation
+                let distance_x =
+                    this.distance / (this.border_distance - this.trigger_distance) *
+                    (this.container.offsetWidth - innerWidth);
+
+                for (let i = 0; i < this.cards.length; i++) {
+                    // Move the cards container
+                    this.cards[i].style.transform = `translateX(${-distance_x}px)`;
+                    // Animate the truck with a parallax effect (moves faster)
+                    this.trucks[i].style.transform = `translateX(${distance_x * 1.2}px)`;
+                    // Animate the city with a parallax effect (moves slower)
+                    this.citys[i].style.transform = `translateX(${distance_x * 0.5}px)`;
+                };
+            };
+        }
+    };
+
+    // Initial setup and event listeners
+    scrollbox.resize();
+    window.addEventListener("resize", () => {
+        scrollbox.resize();
+    });
+    window.addEventListener("scroll", () => {
+        scrollbox.move();
+    });
+</script>
+
+</html>
